@@ -1,0 +1,25 @@
+version: '3.8'
+
+networks:
+  main:
+
+services:
+  metabase:
+    image: metabase/metabase:latest
+    networks:
+      - main
+    ports:
+      - 3000:3000
+    environment:
+      MB_PASSWORD_COMPLEXITY: weak
+      MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+    restart: on-failure
+    
+  postgres:
+    image: postgres:14
+    networks:
+      - main
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: on-failure

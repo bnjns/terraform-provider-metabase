@@ -1,0 +1,42 @@
+---
+page_title: "Provider: Metabase"
+description: |-
+    This provider can be used to manage an instance of Metabase.
+---
+
+# Metabase Provider
+
+The Metabase provider allows you to configure a [Metabase](https://www.metabase.com/) instance using
+infrastructure-as-code.
+
+## Example Usage
+
+{{ tffile .ExampleFile }}
+
+## Authentication
+
+You must configure the Metabase provider with the username (email) and password of a super user. In general, it is
+recommended that the provider uses a "machine user", which is a user account that no actual users use and exists purely
+for the provider.
+
+!> **Warning:** Hard-coded credentials are not recommended in any Terraform configuration and risks secret leakage.
+
+### Using env variables
+
+The simplest way to configure the provider is to configure the host, username, and password using the environment variables:
+
+- `METABASE_HOST`
+- `METABASE_USERNAME`
+- `METABASE_PASSWORD`
+
+{{ tffile "examples/provider/provider_env.tf" }}
+
+### Using another provider
+
+You can also use another provider to set the credentials for you. For example, using AWS and Secrets Manager:
+
+{{ tffile "examples/provider/provider_aws.tf" }}
+
+> This example assumes a JSON secret, but it can be any structure.
+
+{{ .SchemaMarkdown }}
