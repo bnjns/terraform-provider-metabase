@@ -11,15 +11,6 @@
 A Terraform provider that lets you manage your Metabase instance, because why not Terraform the world?
 </div>
 
-## 📝 Table of Contents
-
-- [About](#-about)
-- [Getting Started](#-getting-started)
-- [Usage](#-usage)
-- [Releasing](#-releasing)
-- [Built Using](#-built-using)
-- [Authors](#-authors)
-
 ## 🧐 About
 
 _TODO_
