@@ -4,6 +4,7 @@
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/bnjns/terraform-provider-metabase/Build%20&%20Test/main?style=flat-square)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/bnjns/terraform-provider-metabase?display_name=tag&label=version&sort=semver&style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/bnjns/terraform-provider-metabase?style=flat-square)
 
 ---
 
