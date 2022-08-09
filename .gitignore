@@ -1,37 +1,38 @@
-*.dll
-*.exe
-.DS_Store
-example.tf
-terraform.tfplan
-terraform.tfstate
-bin/
-dist/
-modules-dev/
-/pkg/
-website/.vagrant
-website/.bundle
-website/build
-website/node_modules
-.vagrant/
-*.backup
-./*.tfstate
-.terraform/
-*.log
-*.bak
-*~
-.*.swp
+### Vim ###
+*.swp
+*.swo
+
+### Eclipse ###
+.project
+.classpath
+.settings/
+
+### IntelliJ ###
 .idea
+*.ipr
 *.iml
-*.test
-*.iml
-metabase.jar
-release-notes.txt
+*.iws
 
-website/vendor
+### NetBeans ###
+nb-configuration.xml
 
-# Test exclusions
+### macOS ###
+.DS_Store
+
+### Tests ###
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 
-# Keep windows files with windows line endings
-*.winfile eol=crlf
+### Build files ###
+*.exe
+dist/
+
+### Terraform ###
+./*.tfstate
+.terraform/
+*.tf
+!/examples/**/*.tf
+
+### Misc ###
+*.jar
+vendor/
