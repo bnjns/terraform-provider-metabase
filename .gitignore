@@ -35,4 +35,5 @@ dist/
 
 ### Misc ###
 *.jar
+*.db
 vendor/
