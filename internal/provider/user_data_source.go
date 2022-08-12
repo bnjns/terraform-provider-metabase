@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/utils"
 
@@ -13,8 +15,8 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.DataSourceType = userDataSourceType{}
-var _ tfsdk.DataSource = userDataSource{}
+var _ provider.DataSourceType = userDataSourceType{}
+var _ datasource.DataSource = userDataSource{}
 
 type userDataSourceType struct{}
 type userDataSourceData struct {
@@ -42,7 +44,7 @@ type userDataSourceData struct {
 	UpdatedAt  types.String `tfsdk:"updated_at"`
 }
 type userDataSource struct {
-	provider provider
+	provider metabaseProvider
 }
 
 func UserAttributes(userSpecifiedId bool) map[string]tfsdk.Attribute {
@@ -141,7 +143,7 @@ func (t userDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 	}, nil
 }
 
-func (t userDataSourceType) NewDataSource(ctx context.Context, in tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (t userDataSourceType) NewDataSource(ctx context.Context, in provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	provider, diags := convertProviderType(in)
 
 	return userDataSource{
@@ -149,7 +151,7 @@ func (t userDataSourceType) NewDataSource(ctx context.Context, in tfsdk.Provider
 	}, diags
 }
 
-func (t userDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (t userDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Get the current state, in the desired struct
 	var data userDataSourceData
 	diags := req.Config.Get(ctx, &data)
