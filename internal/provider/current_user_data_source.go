@@ -2,18 +2,20 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.DataSourceType = currentUserDataSourceType{}
-var _ tfsdk.DataSource = currentUserDataSource{}
+var _ provider.DataSourceType = currentUserDataSourceType{}
+var _ datasource.DataSource = currentUserDataSource{}
 
 type currentUserDataSourceType struct{}
 type currentUserDataSource struct {
-	provider provider
+	provider metabaseProvider
 }
 
 func (t currentUserDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -23,7 +25,7 @@ func (t currentUserDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (t currentUserDataSourceType) NewDataSource(ctx context.Context, in tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (t currentUserDataSourceType) NewDataSource(ctx context.Context, in provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	provider, diags := convertProviderType(in)
 
 	return currentUserDataSource{
@@ -31,7 +33,7 @@ func (t currentUserDataSourceType) NewDataSource(ctx context.Context, in tfsdk.P
 	}, diags
 }
 
-func (t currentUserDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (t currentUserDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	currentUserDetails, err := t.provider.client.GetCurrentUser()
 	if err != nil {
 		resp.Diagnostics.AddError(
