@@ -21,7 +21,7 @@ type currentUserDataSource struct {
 func (t currentUserDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Gets the details of the currently logged-in user.",
-		Attributes:  UserAttributes(false),
+		Attributes:  getUserAttributes(datasourceCurrentUser),
 	}, nil
 }
 
@@ -43,8 +43,8 @@ func (t currentUserDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var data userDataSourceData
-	MapToState(currentUserDetails, &data)
+	var data userResourceState
+	mapToState(currentUserDetails, &data)
 
 	diags := resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)

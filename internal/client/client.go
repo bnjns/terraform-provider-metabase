@@ -29,6 +29,9 @@ type AuthDetails struct {
 type AuthResponse struct {
 	SessionId string `json:"id"`
 }
+type SuccessResponse struct {
+	Success bool `json:"success"`
+}
 
 func NewClient(host string, username string, password string) (*Client, error) {
 	if host == "" {
@@ -111,6 +114,43 @@ func (c *Client) doPost(path string, request interface{}, response interface{}) 
 	}
 
 	req, err := http.NewRequest("POST", c.makeUrl(path), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+
+	err = c.doRequest(req, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) doPut(path string, request interface{}, response interface{}) error {
+	var bodyBuffer bytes.Buffer
+	if request != nil {
+		reqBody, err := json.Marshal(request)
+		if err != nil {
+			return err
+		}
+		bodyBuffer = *bytes.NewBuffer(reqBody)
+	}
+
+	req, err := http.NewRequest("PUT", c.makeUrl(path), &bodyBuffer)
+	if err != nil {
+		return err
+	}
+
+	err = c.doRequest(req, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) doDelete(path string, response interface{}) error {
+	req, err := http.NewRequest("DELETE", c.makeUrl(path), nil)
 	if err != nil {
 		return err
 	}

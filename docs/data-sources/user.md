@@ -29,10 +29,10 @@ Gets the details of the provided user.
 - `group_ids` (List of Number) The IDs of the user groups the user is a member of.
 - `has_invited_second_user` (Boolean)
 - `has_question_and_dashboard` (Boolean)
-- `is_active` (Boolean)
+- `is_active` (Boolean) Used to indicate whether a user is active or if they've been deleted.
 - `is_installer` (Boolean)
-- `is_qbnewb` (Boolean)
-- `is_superuser` (Boolean)
+- `is_qbnewb` (Boolean) If false then the user has been introduced to how the Query Builder works.
+- `is_superuser` (Boolean) Whether the user is a member of the built-in Admin group.
 - `last_login` (String)
 - `last_name` (String) The last name of the user.
 - `ldap_auth` (Boolean)

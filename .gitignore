@@ -28,7 +28,7 @@ nb-configuration.xml
 dist/
 
 ### Terraform ###
-./*.tfstate
+*.tfstate*
 .terraform/
 *.tf
 !/examples/**/*.tf
