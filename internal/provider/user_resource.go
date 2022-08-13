@@ -245,21 +245,7 @@ func (u userResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// Ensure we have a consistent plan for any known plan values
-	if !plan.Email.Unknown {
-		user.Email = plan.Email
-	}
-	if !plan.FirstName.Unknown {
-		user.FirstName = plan.FirstName
-	}
-	if !plan.LastName.Unknown {
-		user.LastName = plan.LastName
-	}
-	if !plan.GroupIds.Unknown {
-		user.GroupIds = plan.GroupIds
-	}
-	if !plan.IsSuperuser.Unknown {
-		user.IsSuperuser = plan.IsSuperuser
-	}
+	ensureConsistentCreate(&user, &plan)
 
 	// Update the state
 	diags = resp.State.Set(ctx, user)
@@ -337,27 +323,7 @@ func (u userResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// Ensure we have a consistent plan for any known plan values
-	if !plan.Email.Unknown {
-		state.Email = plan.Email
-	}
-	if !plan.FirstName.Unknown {
-		state.FirstName = plan.FirstName
-	}
-	if !plan.LastName.Unknown {
-		state.LastName = plan.LastName
-	}
-	if !plan.GroupIds.Unknown {
-		state.GroupIds = plan.GroupIds
-	}
-	if !plan.IsSuperuser.Unknown {
-		state.IsSuperuser = plan.IsSuperuser
-	}
-	if !plan.Locale.Unknown {
-		state.Locale = plan.Locale
-	}
-	if !plan.IsActive.Unknown {
-		state.IsActive = plan.IsActive
-	}
+	ensureConsistentUpdate(&state, &plan)
 
 	// Update the state
 	diags = resp.State.Set(ctx, state)
@@ -472,4 +438,46 @@ func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
 		}
 	}
 	return &groupMemberships
+}
+
+func ensureConsistentCreate(state *userResourceState, plan *userResourceState) {
+	if !plan.Email.Unknown {
+		state.Email = plan.Email
+	}
+	if !plan.FirstName.Unknown {
+		state.FirstName = plan.FirstName
+	}
+	if !plan.LastName.Unknown {
+		state.LastName = plan.LastName
+	}
+	if !plan.GroupIds.Unknown {
+		state.GroupIds = plan.GroupIds
+	}
+	if !plan.IsSuperuser.Unknown {
+		state.IsSuperuser = plan.IsSuperuser
+	}
+}
+
+func ensureConsistentUpdate(state *userResourceState, plan *userResourceState) {
+	if !plan.Email.Unknown {
+		state.Email = plan.Email
+	}
+	if !plan.FirstName.Unknown {
+		state.FirstName = plan.FirstName
+	}
+	if !plan.LastName.Unknown {
+		state.LastName = plan.LastName
+	}
+	if !plan.GroupIds.Unknown {
+		state.GroupIds = plan.GroupIds
+	}
+	if !plan.IsSuperuser.Unknown {
+		state.IsSuperuser = plan.IsSuperuser
+	}
+	if !plan.Locale.Unknown {
+		state.Locale = plan.Locale
+	}
+	if !plan.IsActive.Unknown {
+		state.IsActive = plan.IsActive
+	}
 }
