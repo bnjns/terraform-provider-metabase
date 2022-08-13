@@ -44,7 +44,7 @@ func NewClient(host string, username string, password string) (*Client, error) {
 		return nil, fmt.Errorf("must provide a valid password")
 	}
 
-	c := Client{
+	c := &Client{
 		BaseURL: host,
 		HttpClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -60,7 +60,7 @@ func NewClient(host string, username string, password string) (*Client, error) {
 		return nil, err
 	}
 
-	return &c, nil
+	return c, nil
 }
 
 func (c *Client) doRequest(req *http.Request, response interface{}) error {

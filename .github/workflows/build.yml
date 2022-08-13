@@ -31,7 +31,7 @@ jobs:
       - run: go mod download
       - run: go build -v .
 
-  generate:
+  check-docs:
     name: Check Documentation
     runs-on: ubuntu-latest
     steps:
@@ -46,8 +46,42 @@ jobs:
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
 
-  test:
-    name: Acceptance Tests
+  test-client:
+    name: Client Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      METABASE_HOST: http://localhost:3000
+      METABASE_USERNAME: example@example.com
+      METABASE_PASSWORD: password
+    services:
+      metabase:
+        image: metabase/metabase
+        ports:
+          - 3000:3000
+        env:
+          MB_PASSWORD_COMPLEXITY: weak
+          MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+        options: >-
+          --health-cmd "curl --fail http://localhost:3000/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Set up Metabase
+        run: ./scripts/setup_metabase.sh
+      - name: Run tests
+        run: |
+          go test terraform-provider-metabase/internal/client -v
+
+  test-provider:
+    name: Provider Tests
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
