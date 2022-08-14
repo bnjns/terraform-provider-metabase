@@ -65,8 +65,8 @@ resource "metabase_user" "example" {
 
 ## Import
 
-You can import existing resources using the following syntax:
+You can import existing users using the ID:
 
 ```shell
-$ terraform import metabase_user.example {{user_id}}
+$ terraform import metabase_user.example 1
 ```
