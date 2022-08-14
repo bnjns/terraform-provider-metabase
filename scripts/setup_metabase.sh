@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
 host="${METABASE_HOST:-http://localhost:3000}"
 username="${METABASE_USERNAME:-example@example.com}"
 password="${METABASE_PASSWORD:-password}"
