@@ -21,7 +21,7 @@ type currentUserDataSource struct {
 func (t currentUserDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Gets the details of the currently logged-in user.",
-		Attributes:  getUserAttributes(datasourceCurrentUser),
+		Attributes:  getUserAttributes(blockTypeDataSourceCurrentUser),
 	}, nil
 }
 

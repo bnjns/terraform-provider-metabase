@@ -20,7 +20,7 @@ type userDataSource struct {
 func (t userDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Gets the details of the provided user.",
-		Attributes:  getUserAttributes(datasourceUser),
+		Attributes:  getUserAttributes(blockTypeDataSourceUser),
 	}, nil
 }
 

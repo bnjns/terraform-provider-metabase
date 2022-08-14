@@ -52,18 +52,17 @@ type userResourceState struct {
 	UpdatedAt  types.String `tfsdk:"updated_at"`
 }
 
-type userBlockType int
+type blockTypeUser int
 
-// TODO: better names for these
 const (
-	resourceUser userBlockType = iota
-	datasourceUser
-	datasourceCurrentUser
+	blockTypeResourceUser blockTypeUser = iota
+	blockTypeDataSourceUser
+	blockTypeDataSourceCurrentUser
 )
 
-func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
+func getUserAttributes(t blockTypeUser) map[string]tfsdk.Attribute {
 	groupDescription := "The IDs of the user groups the user is a member of."
-	if t == resourceUser {
+	if t == blockTypeResourceUser {
 		groupDescription += " The 'All Users' group is automatically added by Metabase and you can use `is_superuser` to add the user to the 'Administrators' group."
 	}
 
@@ -71,14 +70,14 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 		"id": {
 			Type:        types.Int64Type,
 			Description: "The ID of the user.",
-			Required:    t == datasourceUser,
-			Computed:    t != datasourceUser,
+			Required:    t == blockTypeDataSourceUser,
+			Computed:    t != blockTypeDataSourceUser,
 		},
 		"email": {
 			Type:        types.StringType,
 			Description: "The email address of the user.",
-			Required:    t == resourceUser,
-			Computed:    t != resourceUser,
+			Required:    t == blockTypeResourceUser,
+			Computed:    t != blockTypeResourceUser,
 			Validators: []tfsdk.AttributeValidator{
 				validators.NotEmptyStringValidator(),
 			},
@@ -86,8 +85,8 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 		"first_name": {
 			Type:        types.StringType,
 			Description: "The first name of the user.",
-			Optional:    t == resourceUser,
-			Computed:    t != resourceUser,
+			Optional:    t == blockTypeResourceUser,
+			Computed:    t != blockTypeResourceUser,
 			Validators: []tfsdk.AttributeValidator{
 				validators.NotEmptyStringValidator(),
 			},
@@ -95,8 +94,8 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 		"last_name": {
 			Type:        types.StringType,
 			Description: "The last name of the user.",
-			Optional:    t == resourceUser,
-			Computed:    t != resourceUser,
+			Optional:    t == blockTypeResourceUser,
+			Computed:    t != blockTypeResourceUser,
 			Validators: []tfsdk.AttributeValidator{
 				validators.NotEmptyStringValidator(),
 			},
@@ -109,13 +108,13 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 		"locale": {
 			Type:        types.StringType,
 			Description: "The locale the user has configured for themselves. The site default is used if this is nil.",
-			Optional:    t == resourceUser,
-			Computed:    t != resourceUser,
+			Optional:    t == blockTypeResourceUser,
+			Computed:    t != blockTypeResourceUser,
 		},
 		"group_ids": {
 			Type:        types.ListType{ElemType: types.Int64Type},
 			Description: groupDescription,
-			Optional:    t == resourceUser,
+			Optional:    t == blockTypeResourceUser,
 			Computed:    true,
 			Validators: []tfsdk.AttributeValidator{
 				validators.UserNotInReservedGroupsValidator(),
@@ -149,7 +148,7 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 		"is_superuser": {
 			Type:        types.BoolType,
 			Description: "Whether the user is a member of the built-in Admin group.",
-			Optional:    t == resourceUser,
+			Optional:    t == blockTypeResourceUser,
 			Computed:    true,
 			PlanModifiers: tfsdk.AttributePlanModifiers{
 				modifiers.DefaultToFalseModifier(),
@@ -185,7 +184,7 @@ func getUserAttributes(t userBlockType) map[string]tfsdk.Attribute {
 func (t userResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Allows for creating and managing users in Metabase.",
-		Attributes:  getUserAttributes(resourceUser),
+		Attributes:  getUserAttributes(blockTypeResourceUser),
 	}, nil
 }
 
