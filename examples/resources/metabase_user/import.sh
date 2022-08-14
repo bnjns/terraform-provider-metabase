@@ -1,1 +1,1 @@
-$ terraform import metabase_user.example {{user_id}}
+$ terraform import metabase_user.example 1
