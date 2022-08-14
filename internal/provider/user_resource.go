@@ -238,14 +238,14 @@ func (u userResource) Create(ctx context.Context, req resource.CreateRequest, re
 	// Refresh the state
 	var user userResourceState
 	user.Id = types.Int64{Value: userId}
-	diags = u.provider.syncWithApi(&user)
+	diags = u.provider.syncUserWithApi(&user)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Ensure we have a consistent plan for any known plan values
-	ensureConsistentCreate(&user, &plan)
+	user.ensureConsistentCreate(&plan)
 
 	// Update the state
 	diags = resp.State.Set(ctx, user)
@@ -260,7 +260,7 @@ func (u userResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	diags = u.provider.syncWithApi(&state)
+	diags = u.provider.syncUserWithApi(&state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -316,14 +316,14 @@ func (u userResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// Refresh the state
-	diags = u.provider.syncWithApi(&state)
+	diags = u.provider.syncUserWithApi(&state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Ensure we have a consistent plan for any known plan values
-	ensureConsistentUpdate(&state, &plan)
+	state.ensureConsistentUpdate(&plan)
 
 	// Update the state
 	diags = resp.State.Set(ctx, state)
@@ -369,7 +369,7 @@ func (u userResource) ImportState(ctx context.Context, req resource.ImportStateR
 	// Refresh the state from the API
 	var state userResourceState
 	state.Id = types.Int64{Value: userId}
-	diags := u.provider.syncWithApi(&state)
+	diags := u.provider.syncUserWithApi(&state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -380,7 +380,7 @@ func (u userResource) ImportState(ctx context.Context, req resource.ImportStateR
 	resp.Diagnostics.Append(diags...)
 }
 
-func mapToState(user *client.User, target *userResourceState) {
+func mapUserToState(user *client.User, target *userResourceState) {
 	groupIds := make([]attr.Value, 0)
 	for _, membership := range user.GroupMemberships {
 		// We need to remove the restricted groups from state so they don't conflict
@@ -413,7 +413,7 @@ func mapToState(user *client.User, target *userResourceState) {
 	target.UpdatedAt = transforms.ToTerraformString(user.UpdatedAt)
 }
 
-func (p *metabaseProvider) syncWithApi(state *userResourceState) diag.Diagnostics {
+func (p *metabaseProvider) syncUserWithApi(state *userResourceState) diag.Diagnostics {
 	userId := state.Id.Value
 
 	userDetails, err := p.client.GetUser(userId)
@@ -426,7 +426,7 @@ func (p *metabaseProvider) syncWithApi(state *userResourceState) diag.Diagnostic
 		}
 	}
 
-	mapToState(userDetails, state)
+	mapUserToState(userDetails, state)
 	return diag.Diagnostics{}
 }
 
@@ -440,7 +440,7 @@ func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
 	return &groupMemberships
 }
 
-func ensureConsistentCreate(state *userResourceState, plan *userResourceState) {
+func (state *userResourceState) ensureConsistentCreate(plan *userResourceState) {
 	if !plan.Email.Unknown {
 		state.Email = plan.Email
 	}
@@ -458,7 +458,7 @@ func ensureConsistentCreate(state *userResourceState, plan *userResourceState) {
 	}
 }
 
-func ensureConsistentUpdate(state *userResourceState, plan *userResourceState) {
+func (state *userResourceState) ensureConsistentUpdate(plan *userResourceState) {
 	if !plan.Email.Unknown {
 		state.Email = plan.Email
 	}

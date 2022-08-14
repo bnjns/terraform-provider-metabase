@@ -44,7 +44,7 @@ func (t currentUserDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	var data userResourceState
-	mapToState(currentUserDetails, &data)
+	mapUserToState(currentUserDetails, &data)
 
 	diags := resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)

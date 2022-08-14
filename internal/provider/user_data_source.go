@@ -41,7 +41,7 @@ func (t userDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	diags = t.provider.syncWithApi(&data)
+	diags = t.provider.syncUserWithApi(&data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
