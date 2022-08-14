@@ -58,10 +58,11 @@ func TestNewClient(t *testing.T) {
 		assert.NotEmpty(t, c.SessionId)
 	})
 
-	t.Run("providing valid credentials should sign in once initialised", func(t *testing.T) {
+	t.Run("providing invalid credentials should return an error and not sign in", func(t *testing.T) {
 		c, err := NewClient(host, "bad", "credentials")
 
 		assert.Nil(t, c, "Expected nil client")
 		assert.ErrorContainsf(t, err, "did not match stored password", "Did not receive expected error")
+		assert.Empty(t, c.SessionId)
 	})
 }
