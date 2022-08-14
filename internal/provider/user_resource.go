@@ -124,12 +124,14 @@ func getUserAttributes(t blockTypeUser) map[string]tfsdk.Attribute {
 			},
 		},
 		"google_auth": {
-			Type:     types.BoolType,
-			Computed: true,
+			Type:        types.BoolType,
+			Description: "Whether the user was created via Google SSO. Note, if this is enabled then username/password log-in will not be possible.",
+			Computed:    true,
 		},
 		"ldap_auth": {
-			Type:     types.BoolType,
-			Computed: true,
+			Type:        types.BoolType,
+			Description: "Whether the user was created via LDAP. Note, if this is enabled then username/password log-in will not be possible.",
+			Computed:    true,
 		},
 		"is_active": {
 			Type:        types.BoolType,
@@ -163,20 +165,24 @@ func getUserAttributes(t blockTypeUser) map[string]tfsdk.Attribute {
 			Computed: true,
 		},
 		"date_joined": {
-			Type:     types.StringType,
-			Computed: true,
+			Type:        types.StringType,
+			Description: "The timestamp of when the user was created.",
+			Computed:    true,
 		},
 		"first_login": {
-			Type:     types.StringType,
-			Computed: true,
+			Type:        types.StringType,
+			Description: "The timestamp of when the user first logged into Metabase.",
+			Computed:    true,
 		},
 		"last_login": {
-			Type:     types.StringType,
-			Computed: true,
+			Type:        types.StringType,
+			Description: "The timestamp of the user's most recent login to Metabase.",
+			Computed:    true,
 		},
 		"updated_at": {
-			Type:     types.StringType,
-			Computed: true,
+			Type:        types.StringType,
+			Description: "The timestamp of when the user was last updated.",
+			Computed:    true,
 		},
 	}
 }

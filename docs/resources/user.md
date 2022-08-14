@@ -51,18 +51,18 @@ resource "metabase_user" "example" {
 ### Read-Only
 
 - `common_name` (String) The user's common name, which is a combination of their first and last names.
-- `date_joined` (String)
-- `first_login` (String)
-- `google_auth` (Boolean)
+- `date_joined` (String) The timestamp of when the user was created.
+- `first_login` (String) The timestamp of when the user first logged into Metabase.
+- `google_auth` (Boolean) Whether the user was created via Google SSO. Note, if this is enabled then username/password log-in will not be possible.
 - `has_invited_second_user` (Boolean)
 - `has_question_and_dashboard` (Boolean)
 - `id` (Number) The ID of the user.
 - `is_active` (Boolean) Used to indicate whether a user is active or if they've been deleted.
 - `is_installer` (Boolean)
 - `is_qbnewb` (Boolean) If false then the user has been introduced to how the Query Builder works.
-- `last_login` (String)
-- `ldap_auth` (Boolean)
-- `updated_at` (String)
+- `last_login` (String) The timestamp of the user's most recent login to Metabase.
+- `ldap_auth` (Boolean) Whether the user was created via LDAP. Note, if this is enabled then username/password log-in will not be possible.
+- `updated_at` (String) The timestamp of when the user was last updated.
 
 ## Import
 
