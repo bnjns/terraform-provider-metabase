@@ -85,6 +85,23 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      METABASE_HOST: http://localhost:3000
+      METABASE_USERNAME: example@example.com
+      METABASE_PASSWORD: password
+    services:
+      metabase:
+        image: metabase/metabase
+        ports:
+          - 3000:3000
+        env:
+          MB_PASSWORD_COMPLEXITY: weak
+          MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+        options: >-
+          --health-cmd "curl --fail http://localhost:3000/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -93,6 +110,8 @@ jobs:
           - '1.1.*'
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Metabase
+        run: ./scripts/setup_metabase.sh
       - uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
