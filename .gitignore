@@ -38,3 +38,4 @@ dist/
 *.db
 vendor/
 /terraform-provider-metabase
+/tests/*

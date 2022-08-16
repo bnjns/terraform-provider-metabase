@@ -46,23 +46,8 @@ jobs:
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
 
-  test-client:
-    name: Client Tests
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-      - name: Run tests
-        run: |
-          go test terraform-provider-metabase/internal/client -v
-
-  test-provider:
-    name: Provider Tests
+  test:
+    name: Tests
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -104,17 +89,10 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
-        run: go test -v -cover ./internal/provider/
+        run: |
+          go test -v ./... -coverprofile=tests/coverage.out -json | tee tests/report.json
         timeout-minutes: 10
-
-  sonarcloud:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: SonarCloud Scan
+      - name: SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
