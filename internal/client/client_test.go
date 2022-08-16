@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -98,7 +97,7 @@ func TestClient_doGet(t *testing.T) {
 		if request.Method == "GET" && request.URL.Path == "/api/test" {
 			writer.WriteHeader(200)
 			writer.Header().Set("Content-Type", "application/json")
-			io.WriteString(writer, `{"key": "value"}`)
+			writer.Write([]byte(`{"key": "value"}`))
 			return true
 		}
 
