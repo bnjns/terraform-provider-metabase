@@ -37,3 +37,4 @@ dist/
 *.jar
 *.db
 vendor/
+/terraform-provider-metabase

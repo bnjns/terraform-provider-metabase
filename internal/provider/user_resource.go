@@ -398,7 +398,7 @@ func mapUserToState(user *client.User, target *userResourceState) {
 	target.Email = types.String{Value: user.Email}
 	target.FirstName = transforms.ToTerraformString(user.FirstName)
 	target.LastName = transforms.ToTerraformString(user.LastName)
-	target.CommonName = types.String{Value: user.CommonName}
+	target.CommonName = transforms.ToTerraformString(user.CommonName)
 	target.Locale = transforms.ToTerraformString(user.Locale)
 	target.GroupIds = types.List{
 		ElemType: types.Int64Type,
