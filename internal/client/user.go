@@ -61,7 +61,7 @@ func (c *Client) GetCurrentUser() (*User, error) {
 		return nil, err
 	}
 
-	var groupMemberships []GroupMembership
+	groupMemberships := []GroupMembership{}
 	if currentUser.GroupIds != nil {
 		for _, groupId := range currentUser.GroupIds {
 			groupMemberships = append(groupMemberships, GroupMembership{Id: groupId})
