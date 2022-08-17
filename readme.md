@@ -13,7 +13,15 @@ A Terraform provider that lets you manage your Metabase instance, because why no
 
 ## 🧐 About
 
-_TODO_
+[Metabase](https://www.metabase.com/) is a simple analytics tool which allows anyone to easily learn and make decisions
+from their company's data. It allows you to query data directly from your databases (called "questions"), which you can
+store and share with others, as well as generate reports.
+
+As with everything, software engineers are incredibly lazy and like to avoid configuring things manually so this
+provider lets you manage your Metabase instance using Terraform and any standard infrastructure-as-code tooling and
+processes you may already have.
+
+⚠️ This provider is still a work-in-progress and not all features are available. See the v1 project for details.
 
 ## 🏁 Getting Started
 
@@ -105,6 +113,17 @@ $ java \
 
 This will start Metabase on port 3000.
 
+#### Setting up Metabase
+
+When Metabase first starts, it will require some basic initial set up before it can be used. You can set it up manually
+by visiting <https://localhost:3000> and following the steps or using the included script:
+
+```sh
+$ scripts/setup_metabase.sh
+```
+
+This will create a user with email `example@example.com` and password `password`.
+
 ### Generating the documentation
 
 The documentation can be auto-generated using `tfplugindocs`:
@@ -115,11 +134,31 @@ go generate
 
 ### Running the tests
 
-_TODO_
+Make sure you have [Metabase running](#running-metabase) and configured using the included script, as the provider tests
+require an actual instance of Metabase to interact with.
+
+To run the unit tests for the client:
+
+```sh
+$ go test -v ./internal/client/
+```
+
+To run the provider acceptance tests:
+
+```sh
+$ TF_ACC=1 go test -v ./internal/provider/
+```
+
+To run all tests:
+
+```sh
+$ go test -v ./...
+```
 
 ## 🚀 Releasing
 
-_TODO_
+Releasing is handled automatically by [GitHub Actions](.github/workflows/release.yml) and
+Hashicorp's `terraform-provider-release` action. An admin will simply tag the latest release to trigger the pipeline.
 
 ## ⛏️ Built Using
 
