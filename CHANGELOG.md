@@ -1,5 +1,9 @@
 ## 0.2.0 (Unreleased)+
 
+FEATURES
+
+* **New Resource:** `metabase_user`
+
 NOTES:
 
 * Upgraded the SDK to 0.11
@@ -8,5 +12,5 @@ NOTES:
 
 FEATURES:
 
-* **New Data Source:** `current_user`
-* **New Data Source:** `user`
+* **New Data Source:** `metabase_current_user`
+* **New Data Source:** `metabase_user`

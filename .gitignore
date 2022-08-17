@@ -28,7 +28,7 @@ nb-configuration.xml
 dist/
 
 ### Terraform ###
-./*.tfstate
+*.tfstate*
 .terraform/
 *.tf
 !/examples/**/*.tf
@@ -37,3 +37,5 @@ dist/
 *.jar
 *.db
 vendor/
+/terraform-provider-metabase
+/tests/*

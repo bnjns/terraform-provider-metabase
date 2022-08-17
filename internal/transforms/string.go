@@ -1,4 +1,4 @@
-package utils
+package transforms
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"

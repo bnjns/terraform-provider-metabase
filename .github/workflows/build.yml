@@ -31,7 +31,7 @@ jobs:
       - run: go mod download
       - run: go build -v .
 
-  generate:
+  check-docs:
     name: Check Documentation
     runs-on: ubuntu-latest
     steps:
@@ -47,10 +47,27 @@ jobs:
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
 
   test:
-    name: Acceptance Tests
+    name: Tests
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      METABASE_HOST: http://localhost:3000
+      METABASE_USERNAME: example@example.com
+      METABASE_PASSWORD: password
+    services:
+      metabase:
+        image: metabase/metabase
+        ports:
+          - 3000:3000
+        env:
+          MB_PASSWORD_COMPLEXITY: weak
+          MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+        options: >-
+          --health-cmd "curl --fail http://localhost:3000/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +76,10 @@ jobs:
           - '1.1.*'
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Metabase
+        run: ./scripts/setup_metabase.sh
       - uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
@@ -70,17 +91,10 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
-        run: go test -v -cover ./internal/provider/
+        run: |
+          go test -v ./... -coverprofile=tests/coverage.out -json | tee tests/report.json
         timeout-minutes: 10
-
-  sonarcloud:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: SonarCloud Scan
+      - name: SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

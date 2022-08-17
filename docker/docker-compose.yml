@@ -13,6 +13,11 @@ services:
     environment:
       MB_PASSWORD_COMPLEXITY: weak
       MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 1s
+      retries: 11
     restart: on-failure
     
   postgres:

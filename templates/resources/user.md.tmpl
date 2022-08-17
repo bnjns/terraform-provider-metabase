@@ -1,0 +1,32 @@
+---
+page_title: "{{ .Type }}: {{ .Name }}"
+subcategory: "Users"
+description: |-
+    {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{ .Type }}: {{ .Name }}
+
+{{ .Description | trimspace }}
+
+## Example Usage
+
+### Standard user
+
+{{ tffile "examples/resources/metabase_user/resource.tf" }}
+
+### Superuser
+
+{{ tffile "examples/resources/metabase_user/resource.superuser.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ if .HasImport -}}
+You can import existing users using the ID:
+
+{{ codefile "shell" .ImportFile }}
+{{- else }}
+This resource does not support importing.
+{{- end }}

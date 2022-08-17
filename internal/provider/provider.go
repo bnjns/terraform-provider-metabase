@@ -99,7 +99,9 @@ func (p *metabaseProvider) Configure(ctx context.Context, req provider.Configure
 }
 
 func (p *metabaseProvider) GetResources(ctx context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{}, nil
+	return map[string]provider.ResourceType{
+		"metabase_user": userResourceType{},
+	}, nil
 }
 
 func (p *metabaseProvider) GetDataSources(ctx context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {

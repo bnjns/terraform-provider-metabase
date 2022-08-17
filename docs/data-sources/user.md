@@ -21,20 +21,20 @@ Gets the details of the provided user.
 ### Read-Only
 
 - `common_name` (String) The user's common name, which is a combination of their first and last names.
-- `date_joined` (String)
+- `date_joined` (String) The timestamp of when the user was created.
 - `email` (String) The email address of the user.
-- `first_login` (String)
+- `first_login` (String) The timestamp of when the user first logged into Metabase.
 - `first_name` (String) The first name of the user.
-- `google_auth` (Boolean)
+- `google_auth` (Boolean) Whether the user was created via Google SSO. Note, if this is enabled then username/password log-in will not be possible.
 - `group_ids` (List of Number) The IDs of the user groups the user is a member of.
 - `has_invited_second_user` (Boolean)
 - `has_question_and_dashboard` (Boolean)
-- `is_active` (Boolean)
+- `is_active` (Boolean) Used to indicate whether a user is active or if they've been deleted.
 - `is_installer` (Boolean)
-- `is_qbnewb` (Boolean)
-- `is_superuser` (Boolean)
-- `last_login` (String)
+- `is_qbnewb` (Boolean) If false then the user has been introduced to how the Query Builder works.
+- `is_superuser` (Boolean) Whether the user is a member of the built-in Admin group.
+- `last_login` (String) The timestamp of the user's most recent login to Metabase.
 - `last_name` (String) The last name of the user.
-- `ldap_auth` (Boolean)
+- `ldap_auth` (Boolean) Whether the user was created via LDAP. Note, if this is enabled then username/password log-in will not be possible.
 - `locale` (String) The locale the user has configured for themselves. The site default is used if this is nil.
-- `updated_at` (String)
+- `updated_at` (String) The timestamp of when the user was last updated.
