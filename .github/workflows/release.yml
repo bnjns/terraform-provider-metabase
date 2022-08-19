@@ -30,7 +30,7 @@ jobs:
       gpg-private-key-passphrase: ${{ secrets.GPG_PASSPHRASE }}
     with:
       release-notes: true
-      setup-go-version: '1.17.x'
+      setup-go-version: '1.18.x'
   highest-version-tag:
     needs: [ terraform-provider-release ]
     runs-on: ubuntu-latest
