@@ -1,4 +1,5 @@
-## 0.3.0 (Unreleased)
+## 0.4.0 (Unreleased)
+## 0.3.0 (October 11, 2022)
 
 BUG FIXES:
 
