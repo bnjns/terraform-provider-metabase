@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
 
 	"terraform-provider-metabase/internal/client"
@@ -14,22 +16,26 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ provider.Provider = &metabaseProvider{}
+var _ provider.Provider = &MetabaseProvider{}
 
-type metabaseProvider struct {
+type MetabaseProvider struct {
 	client     *client.Client
 	configured bool
 	version    string
 }
 
-type providerData struct {
+type MetabaseProviderModel struct {
 	Host     types.String `tfsdk:"host"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 }
 
-func (p *metabaseProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var config providerData
+func (p *MetabaseProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "metabase"
+}
+
+func (p *MetabaseProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var config MetabaseProviderModel
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 
@@ -98,20 +104,26 @@ func (p *metabaseProvider) Configure(ctx context.Context, req provider.Configure
 	p.configured = true
 }
 
-func (p *metabaseProvider) GetResources(ctx context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"metabase_user": userResourceType{},
-	}, nil
+func (p *MetabaseProvider) Resources(ctx context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		func() resource.Resource {
+			return &UserResource{provider: p}
+		},
+	}
 }
 
-func (p *metabaseProvider) GetDataSources(ctx context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{
-		"metabase_current_user": currentUserDataSourceType{},
-		"metabase_user":         userDataSourceType{},
-	}, nil
+func (p *MetabaseProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		func() datasource.DataSource {
+			return &CurrentUserDataSource{provider: p}
+		},
+		func() datasource.DataSource {
+			return &UserDataSource{provider: p}
+		},
+	}
 }
 
-func (p *metabaseProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *MetabaseProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"host": {
@@ -136,37 +148,8 @@ func (p *metabaseProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Di
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &metabaseProvider{
+		return &MetabaseProvider{
 			version: version,
 		}
 	}
-}
-
-// convertProviderType is a helper function for NewResource and NewDataSource
-// implementations to associate the concrete provider type. Alternatively,
-// this helper can be skipped and the provider type can be directly type
-// asserted (e.g. provider: in.(*provider)), however using this can prevent
-// potential panics.
-func convertProviderType(in provider.Provider) (metabaseProvider, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	p, ok := in.(*metabaseProvider)
-
-	if !ok {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			fmt.Sprintf("While creating the data source or resource, an unexpected provider type (%T) was received. This is always a bug in the provider code and should be reported to the provider developers.", p),
-		)
-		return metabaseProvider{}, diags
-	}
-
-	if p == nil {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			"While creating the data source or resource, an unexpected empty provider instance was received. This is always a bug in the provider code and should be reported to the provider developers.",
-		)
-		return metabaseProvider{}, diags
-	}
-
-	return *p, diags
 }

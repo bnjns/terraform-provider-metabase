@@ -1,4 +1,13 @@
 ## 0.3.0 (Unreleased)
+
+BUG FIXES:
+
+* resource/metabase_user: Use `nil` for user group memberships instead of an empty array to fix issue with creating users with 0.44 
+
+NOTES:
+
+* Upgraded the SDK to 0.14
+
 ## 0.2.0 (August 19, 2022)
 
 FEATURES

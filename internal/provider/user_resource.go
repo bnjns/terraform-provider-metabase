@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -18,16 +17,14 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ provider.ResourceType = userResourceType{}
-var _ resource.Resource = userResource{}
-var _ resource.ResourceWithImportState = userResource{}
+var _ resource.Resource = &UserResource{}
+var _ resource.ResourceWithImportState = &UserResource{}
 
-type userResourceType struct{}
-type userResource struct {
-	provider metabaseProvider
+type UserResource struct {
+	provider *MetabaseProvider
 }
 
-type userResourceState struct {
+type UserResourceModel struct {
 	Id         types.Int64  `tfsdk:"id"`
 	Email      types.String `tfsdk:"email"`
 	FirstName  types.String `tfsdk:"first_name"`
@@ -187,23 +184,19 @@ func getUserAttributes(t blockTypeUser) map[string]tfsdk.Attribute {
 	}
 }
 
-func (t userResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (u *UserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user"
+}
+
+func (u *UserResource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Allows for creating and managing users in Metabase.",
 		Attributes:  getUserAttributes(blockTypeResourceUser),
 	}, nil
 }
 
-func (t userResourceType) NewResource(ctx context.Context, in provider.Provider) (resource.Resource, diag.Diagnostics) {
-	provider, diags := convertProviderType(in)
-
-	return userResource{
-		provider: provider,
-	}, diags
-}
-
-func (u userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan userResourceState
+func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan UserResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -241,7 +234,7 @@ func (u userResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// Refresh the state
-	var user userResourceState
+	var user UserResourceModel
 	user.Id = types.Int64{Value: userId}
 	diags = u.provider.syncUserWithApi(&user)
 	resp.Diagnostics.Append(diags...)
@@ -257,8 +250,8 @@ func (u userResource) Create(ctx context.Context, req resource.CreateRequest, re
 	resp.Diagnostics.Append(diags...)
 }
 
-func (u userResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state userResourceState
+func (u *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state UserResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -275,15 +268,15 @@ func (u userResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	resp.Diagnostics.Append(diags...)
 }
 
-func (u userResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan userResourceState
+func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan UserResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var state userResourceState
+	var state UserResourceModel
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -335,8 +328,8 @@ func (u userResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	resp.Diagnostics.Append(diags...)
 }
 
-func (u userResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var user userResourceState
+func (u *UserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var user UserResourceModel
 	diags := req.State.Get(ctx, &user)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -354,7 +347,7 @@ func (u userResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	}
 }
 
-func (u userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (u *UserResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	userId, _ := strconv.ParseInt(req.ID, 10, 64)
 
 	// TODO: the current approach is a bit hacky as we rely on reactivating the user throwing a 404 and erroring if the
@@ -372,7 +365,7 @@ func (u userResource) ImportState(ctx context.Context, req resource.ImportStateR
 	}
 
 	// Refresh the state from the API
-	var state userResourceState
+	var state UserResourceModel
 	state.Id = types.Int64{Value: userId}
 	diags := u.provider.syncUserWithApi(&state)
 	resp.Diagnostics.Append(diags...)
@@ -385,7 +378,7 @@ func (u userResource) ImportState(ctx context.Context, req resource.ImportStateR
 	resp.Diagnostics.Append(diags...)
 }
 
-func mapUserToState(user *client.User, target *userResourceState) {
+func mapUserToState(user *client.User, target *UserResourceModel) {
 	groupIds := make([]attr.Value, 0)
 	for _, membership := range user.GroupMemberships {
 		// We need to remove the restricted groups from state so they don't conflict
@@ -418,7 +411,7 @@ func mapUserToState(user *client.User, target *userResourceState) {
 	target.UpdatedAt = transforms.ToTerraformString(user.UpdatedAt)
 }
 
-func (p *metabaseProvider) syncUserWithApi(state *userResourceState) diag.Diagnostics {
+func (p *MetabaseProvider) syncUserWithApi(state *UserResourceModel) diag.Diagnostics {
 	userId := state.Id.Value
 
 	userDetails, err := p.client.GetUser(userId)
@@ -436,6 +429,10 @@ func (p *metabaseProvider) syncUserWithApi(state *userResourceState) diag.Diagno
 }
 
 func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
+	if groupIds == nil || len(*groupIds) == 0 {
+		return nil
+	}
+
 	groupMemberships := make([]client.GroupMembership, len(*groupIds))
 	for i, groupId := range *groupIds {
 		groupMemberships[i] = client.GroupMembership{
@@ -445,7 +442,7 @@ func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
 	return &groupMemberships
 }
 
-func (state *userResourceState) ensureConsistentCreate(plan *userResourceState) {
+func (state *UserResourceModel) ensureConsistentCreate(plan *UserResourceModel) {
 	if !plan.Email.Unknown {
 		state.Email = plan.Email
 	}
@@ -463,7 +460,7 @@ func (state *userResourceState) ensureConsistentCreate(plan *userResourceState) 
 	}
 }
 
-func (state *userResourceState) ensureConsistentUpdate(plan *userResourceState) {
+func (state *UserResourceModel) ensureConsistentUpdate(plan *UserResourceModel) {
 	if !plan.Email.Unknown {
 		state.Email = plan.Email
 	}
