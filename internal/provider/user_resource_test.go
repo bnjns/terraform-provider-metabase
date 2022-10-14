@@ -90,6 +90,38 @@ resource "metabase_user" "test" {
 	})
 }
 
+func TestAccUserResource_Update(t *testing.T) {
+	userEmail := testAccRandEmail()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: providerConfig + fmt.Sprintf(`
+resource "metabase_user" "test" {
+	email        = "%s"
+	first_name   = "First"
+	last_name    = "Last"
+	is_superuser = false
+}
+`, userEmail),
+				Check: testAccCheckUserConf("metabase_user.test", userEmail, "First", "Last", false),
+			},
+			{
+				Config: providerConfig + fmt.Sprintf(`
+resource "metabase_user" "test" {
+	email        = "%s"
+	first_name   = "Updated"
+	last_name    = "Name"
+	is_superuser = true
+}
+`, userEmail),
+				Check: testAccCheckUserConf("metabase_user.test", userEmail, "Updated", "Name", true),
+			},
+		},
+	})
+}
+
 func TestAccUserResource_Groups(t *testing.T) {
 	t.Skip("To be added when groups are supported")
 }
