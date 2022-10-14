@@ -123,7 +123,27 @@ resource "metabase_user" "test" {
 }
 
 func TestAccUserResource_Groups(t *testing.T) {
-	t.Skip("To be added when groups are supported")
+	userEmail := testAccRandEmail()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: providerConfig + fmt.Sprintf(`
+resource "metabase_permissions_group" "test" {
+	name = "Group"
+}
+resource "metabase_user" "test" {
+	email     = "%s"
+	group_ids = [metabase_permissions_group.test.id]
+}
+`, userEmail),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("metabase_user.test", "group_ids.#", "1"),
+				),
+			},
+		},
+	})
 }
 
 func testAccRandEmail() string {

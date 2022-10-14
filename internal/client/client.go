@@ -85,9 +85,11 @@ func (c *Client) doRequest(req *http.Request, response interface{}) error {
 		return errors.New(string(body))
 	}
 
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return err
+	if response != nil {
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -155,7 +157,7 @@ func (c *Client) doDelete(path string, response interface{}) error {
 		return err
 	}
 
-	err = c.doRequest(req, &response)
+	err = c.doRequest(req, response)
 	if err != nil {
 		return err
 	}

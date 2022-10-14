@@ -1,4 +1,10 @@
 ## 0.4.0 (Unreleased)
+
+FEATURES
+
+* **New Resource:** `metabase_permissions_group`
+* **New Data Source:** `metabase_permissions_group`
+
 ## 0.3.0 (October 11, 2022)
 
 BUG FIXES:
