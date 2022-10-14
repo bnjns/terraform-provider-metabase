@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	resourceFirstName = "Test"
-	resourceLastName  = "User"
+	testAccUserFirstName = "Test"
+	testAccUserLastName  = "User"
 )
 
 func TestAccUserResource_Basic(t *testing.T) {
@@ -25,8 +25,8 @@ resource "metabase_user" "test" {
 	first_name = "%s"
 	last_name  = "%s"
 }
-`, resourceEmail, resourceFirstName, resourceLastName),
-				Check: testAccCheckUserConf("metabase_user.test", resourceEmail, resourceFirstName, resourceLastName, false),
+`, resourceEmail, testAccUserFirstName, testAccUserLastName),
+				Check: testAccCheckUserConf("metabase_user.test", resourceEmail, testAccUserFirstName, testAccUserLastName, false),
 			},
 			{
 				ResourceName:      "metabase_user.test",
@@ -78,8 +78,8 @@ resource "metabase_user" "test" {
 	last_name    = "%s"
 	is_superuser = true
 }
-`, resourceEmail, resourceFirstName, resourceLastName),
-				Check: testAccCheckUserConf("metabase_user.test", resourceEmail, resourceFirstName, resourceLastName, true),
+`, resourceEmail, testAccUserFirstName, testAccUserLastName),
+				Check: testAccCheckUserConf("metabase_user.test", resourceEmail, testAccUserFirstName, testAccUserLastName, true),
 			},
 			{
 				ResourceName:      "metabase_user.test",

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestAccCurrentUserDataSource_Read(t *testing.T) {
+func TestAccCurrentUserDataSource_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
