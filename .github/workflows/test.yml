@@ -35,7 +35,7 @@ jobs:
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
       - uses: actions/upload-artifact@v3
         with:
-          name: test-outputs
+          name: tests
           path: tests/
 
   acceptance:
@@ -84,11 +84,11 @@ jobs:
           TF_ACC: "1"
         run: |
           go test -v ./internal/provider \
-            -coverprofile=tests/coverage-acc-${{ matrix.terraform }}.out -json | tee tests/report-acc-${{ matrix.terraform }}.json
+            -coverprofile=tests/coverage-acc.out -json | tee tests/report-acc.json
         timeout-minutes: 10
       - uses: actions/upload-artifact@v3
         with:
-          name: test-outputs
+          name: tests
           path: tests/
 
   sonarcloud:
@@ -103,7 +103,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v3
         with:
-          path: tests/
+          path: .
       - run: ls -la tests
 #      - name: SonarCloud
 #        uses: SonarSource/sonarcloud-github-action@master
