@@ -203,11 +203,12 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
+	groupMemberships := mapToGroupMemberships(transforms.FromTerraformInt64List(plan.GroupIds))
 	var createReq = client.CreateUserRequest{
 		Email:            plan.Email.Value,
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
 		LastName:         transforms.FromTerraformString(plan.LastName),
-		GroupMemberships: mapToGroupMemberships(transforms.FromTerraformInt64List(plan.GroupIds)),
+		GroupMemberships: groupMemberships,
 	}
 
 	userId, err := u.provider.client.CreateUser(createReq)
@@ -222,7 +223,12 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// If the `is_superuser` attribute is set to true we need to update the user
 	if !plan.IsSuperuser.Null && !plan.IsSuperuser.Unknown && plan.IsSuperuser.Value {
 		updateReq := client.UpdateUserRequest{
-			IsSuperuser: &plan.IsSuperuser.Value,
+			Email:            &plan.Email.Value,
+			FirstName:        transforms.FromTerraformString(plan.FirstName),
+			LastName:         transforms.FromTerraformString(plan.LastName),
+			GroupMemberships: groupMemberships,
+			IsSuperuser:      transforms.FromTerraformBool(plan.IsSuperuser),
+			Locale:           transforms.FromTerraformString(plan.Locale),
 		}
 		err := u.provider.client.UpdateUser(userId, updateReq)
 		if err != nil {
