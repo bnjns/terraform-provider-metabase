@@ -1,0 +1,28 @@
+---
+page_title: "{{ .Type }}: {{ .Name }}"
+subcategory: "Permissions"
+description: |-
+    {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{ .Type }}: {{ .Name }}
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ if .HasImport -}}
+You can import existing permissions groups using the ID:
+
+{{ codefile "shell" .ImportFile }}
+{{- else }}
+This resource does not support importing.
+{{- end }}
