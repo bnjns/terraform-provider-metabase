@@ -203,7 +203,8 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	groupMemberships := mapToGroupMemberships(transforms.FromTerraformInt64List(plan.GroupIds))
+	groupIds := addReservedUserGroups(plan)
+	groupMemberships := mapToGroupMemberships(groupIds)
 	var createReq = client.CreateUserRequest{
 		Email:            plan.Email.Value,
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
@@ -290,15 +291,7 @@ func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Add the reserved groups so we don't upset Metabase
-	groupIds := transforms.FromTerraformInt64List(plan.GroupIds)
-	if groupIds != nil {
-		if !slices.Contains(*groupIds, validators.GroupIdAllUsers) {
-			*groupIds = append(*groupIds, validators.GroupIdAllUsers)
-		}
-		if !slices.Contains(*groupIds, validators.GroupIdAdministrators) && plan.IsSuperuser.Value {
-			*groupIds = append(*groupIds, validators.GroupIdAdministrators)
-		}
-	}
+	groupIds := addReservedUserGroups(plan)
 
 	// Update the user
 	userId := state.Id.Value
@@ -446,6 +439,20 @@ func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
 		}
 	}
 	return &groupMemberships
+}
+
+func addReservedUserGroups(plan UserResourceModel) *[]int64 {
+	// Add the reserved groups so we don't upset Metabase
+	groupIds := transforms.FromTerraformInt64List(plan.GroupIds)
+	if groupIds != nil {
+		if !slices.Contains(*groupIds, validators.GroupIdAllUsers) {
+			*groupIds = append(*groupIds, validators.GroupIdAllUsers)
+		}
+		if !slices.Contains(*groupIds, validators.GroupIdAdministrators) && plan.IsSuperuser.Value {
+			*groupIds = append(*groupIds, validators.GroupIdAdministrators)
+		}
+	}
+	return groupIds
 }
 
 func (state *UserResourceModel) ensureConsistentCreate(plan *UserResourceModel) {
