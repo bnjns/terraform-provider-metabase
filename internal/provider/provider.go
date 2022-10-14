@@ -121,6 +121,9 @@ func (p *MetabaseProvider) DataSources(ctx context.Context) []func() datasource.
 			return &CurrentUserDataSource{provider: p}
 		},
 		func() datasource.DataSource {
+			return &PermissionsGroupDataSource{provider: p}
+		},
+		func() datasource.DataSource {
 			return &UserDataSource{provider: p}
 		},
 	}
