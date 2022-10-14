@@ -1,0 +1,110 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'readme.md'
+      - 'CHANGELOG.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'readme.md'
+      - 'CHANGELOG.md'
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - run: go mod download
+      - run: |
+          go test $(go list ./... | grep -v /internal/provider) \
+            -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tests
+          path: tests/
+
+  acceptance:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      METABASE_HOST: http://localhost:3000
+      METABASE_USERNAME: example@example.com
+      METABASE_PASSWORD: password
+    services:
+      metabase:
+        image: metabase/metabase
+        ports:
+          - 3000:3000
+        env:
+          MB_PASSWORD_COMPLEXITY: weak
+          MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+        options: >-
+          --health-cmd "curl --fail http://localhost:3000/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform:
+          - '1.0'
+          - '1.1'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Metabase
+        run: ./scripts/setup_metabase.sh
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ matrix.terraform }}.*
+          terraform_wrapper: false
+      - run: go mod download
+      - env:
+          TF_ACC: "1"
+        run: |
+          go test -v ./internal/provider \
+            -coverprofile=tests/coverage-acc.out -json | tee tests/report-acc.json
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tests
+          path: tests/
+
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    needs:
+      - unit
+      - acceptance
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v3
+        with:
+          path: .
+      - uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
