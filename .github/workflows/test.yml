@@ -21,10 +21,29 @@ jobs:
   unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    env:
+      METABASE_HOST: http://localhost:3000
+      METABASE_USERNAME: example@example.com
+      METABASE_PASSWORD: password
+    services:
+      metabase:
+        image: metabase/metabase:v0.44.5
+        ports:
+          - 3000:3000
+        env:
+          MB_PASSWORD_COMPLEXITY: weak
+          MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
+        options: >-
+          --health-cmd "curl --fail http://localhost:3000/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Set up Metabase
+        run: ./scripts/setup_metabase.sh
       - uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
@@ -48,7 +67,7 @@ jobs:
       METABASE_PASSWORD: password
     services:
       metabase:
-        image: metabase/metabase
+        image: metabase/metabase:v0.44.5
         ports:
           - 3000:3000
         env:

@@ -22,6 +22,11 @@ type Client struct {
 	SessionId string
 }
 
+type ApiResult struct {
+	Error      error
+	StatusCode int
+}
+
 type AuthDetails struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -32,6 +37,8 @@ type AuthResponse struct {
 type SuccessResponse struct {
 	Success bool `json:"success"`
 }
+
+var ErrNotFound = errors.New("not found")
 
 func NewClient(host string, username string, password string) (*Client, error) {
 	if host == "" {
@@ -63,7 +70,7 @@ func NewClient(host string, username string, password string) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) doRequest(req *http.Request, response interface{}) error {
+func (c *Client) doRequest(req *http.Request, response interface{}) (statusCode int, err error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	if c.SessionId != "" {
@@ -72,27 +79,27 @@ func (c *Client) doRequest(req *http.Request, response interface{}) error {
 
 	res, err := c.HttpClient.Do(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return res.StatusCode, err
 	}
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return errors.New(string(body))
+		return res.StatusCode, errors.New(string(body))
 	}
 
 	if response != nil {
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			return err
+			return res.StatusCode, errors.New(string(body))
 		}
 	}
 
-	return nil
+	return 0, nil
 }
 
 func (c *Client) doGet(path string, response interface{}) error {
@@ -101,7 +108,11 @@ func (c *Client) doGet(path string, response interface{}) error {
 		return err
 	}
 
-	err = c.doRequest(req, &response)
+	statusCode, err := c.doRequest(req, &response)
+	if statusCode != 0 && statusCode != 200 {
+		return ErrNotFound
+	}
+
 	if err != nil {
 		return err
 	}
@@ -120,7 +131,7 @@ func (c *Client) doPost(path string, request interface{}, response interface{}) 
 		return err
 	}
 
-	err = c.doRequest(req, &response)
+	_, err = c.doRequest(req, &response)
 	if err != nil {
 		return err
 	}
@@ -143,7 +154,7 @@ func (c *Client) doPut(path string, request interface{}, response interface{}) e
 		return err
 	}
 
-	err = c.doRequest(req, &response)
+	_, err = c.doRequest(req, &response)
 	if err != nil {
 		return err
 	}
@@ -157,7 +168,7 @@ func (c *Client) doDelete(path string, response interface{}) error {
 		return err
 	}
 
-	err = c.doRequest(req, response)
+	_, err = c.doRequest(req, response)
 	if err != nil {
 		return err
 	}
