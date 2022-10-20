@@ -50,7 +50,7 @@ jobs:
           cache: true
       - run: go mod download
       - run: |
-          go test $(go list ./... | grep -v /internal/provider) \
+          go test ./... \
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
       - uses: actions/upload-artifact@v3
         with:
@@ -102,7 +102,7 @@ jobs:
       - env:
           TF_ACC: "1"
         run: |
-          go test -v ./internal/provider \
+          go test -v ./... -run "^TestAcc" \
             -coverprofile=tests/coverage-acc.out -json | tee tests/report-acc.json
         timeout-minutes: 10
       - uses: actions/upload-artifact@v3

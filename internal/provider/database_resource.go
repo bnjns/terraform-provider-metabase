@@ -15,6 +15,10 @@ import (
 	"terraform-provider-metabase/internal/validators"
 )
 
+var (
+	errH2MissingConnString = errors.New("you must provide the connection string in the 'db' property")
+)
+
 type DatabaseModel struct {
 	Id          types.Int64  `tfsdk:"id"`
 	Engine      types.String `tfsdk:"engine"`
@@ -200,14 +204,16 @@ func (d *DatabaseResource) ImportState(ctx context.Context, request resource.Imp
 
 func (d DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) {
 	engine := client.DatabaseEngine(d.Engine.Value)
-	err := checkDatabaseDetails(engine, d.Details)
-	if err != nil {
-		return nil, diag.Diagnostics{
-			diag.NewErrorDiagnostic(
+	errs := checkDatabaseDetails(engine, d.Details)
+	if len(errs) > 0 {
+		diags := make([]diag.Diagnostic, len(errs))
+		for i, err := range errs {
+			diags[i] = diag.NewErrorDiagnostic(
 				"Missing required database configuration",
 				err.Error(),
-			),
+			)
 		}
+		return nil, diags
 	}
 
 	details := make(map[string]*string, len(d.Details.Elems))
@@ -278,15 +284,17 @@ func getDatabaseAttributes(t blockTypeDatabase) map[string]tfsdk.Attribute {
 	}
 }
 
-func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) error {
+func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) []error {
+	var errs []error
+
 	switch engine {
 	case client.EngineH2:
 		if _, exists := details.Elems["db"]; !exists {
-			return errors.New("you must provide the connection string in the 'db' property")
+			errs = append(errs, errH2MissingConnString)
 		}
 	}
 
-	return nil
+	return errs
 }
 
 func (p *MetabaseProvider) syncDatabaseWithApi(state *DatabaseModel) diag.Diagnostics {

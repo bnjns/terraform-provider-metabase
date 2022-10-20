@@ -140,13 +140,13 @@ and provider tests require an actual instance of Metabase to interact with.
 To run the unit tests:
 
 ```sh
-$ go test $(go list ./... | grep -v /internal/provider)
+$ go test -v ./...
 ```
 
 To run the provider acceptance tests:
 
 ```sh
-$ TF_ACC=1 go test -v ./internal/provider/
+$ TF_ACC=1 go test -v ./... -run "^TestAcc"
 ```
 
 > **Note:** While tests should randomly generate unique names in order to prevent conflicts, you may need to stop and

@@ -1,9 +1,23 @@
 package provider
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/stretchr/testify/assert"
+	"terraform-provider-metabase/internal/client"
 	"testing"
 )
+
+func TestCheckDatabaseDetails(t *testing.T) {
+	t.Parallel()
+
+	t.Run("h2 engine", func(t *testing.T) {
+		errs := checkDatabaseDetails(client.EngineH2, types.Map{})
+
+		assert.Len(t, errs, 1)
+		assert.ErrorIs(t, errs[0], errH2MissingConnString)
+	})
+}
 
 func TestAccDatabaseResource_H2(t *testing.T) {
 	resource.Test(t, resource.TestCase{
