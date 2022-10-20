@@ -22,11 +22,6 @@ type Client struct {
 	SessionId string
 }
 
-type ApiResult struct {
-	Error      error
-	StatusCode int
-}
-
 type AuthDetails struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
