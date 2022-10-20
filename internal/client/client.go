@@ -94,7 +94,7 @@ func (c *Client) doRequest(req *http.Request, response interface{}) (statusCode 
 		}
 	}
 
-	return 0, nil
+	return res.StatusCode, nil
 }
 
 func (c *Client) doGet(path string, response interface{}) error {
@@ -104,7 +104,7 @@ func (c *Client) doGet(path string, response interface{}) error {
 	}
 
 	statusCode, err := c.doRequest(req, &response)
-	if statusCode != 0 && statusCode != 200 {
+	if statusCode != 200 {
 		return ErrNotFound
 	}
 
