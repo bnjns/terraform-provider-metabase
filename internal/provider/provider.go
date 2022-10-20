@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
@@ -45,8 +44,6 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 
 	var host string
 	if config.Host.IsNull() || config.Host.IsUnknown() {
-		test := os.Environ()
-		fmt.Print(test)
 		host = os.Getenv("METABASE_HOST")
 	} else {
 		host = config.Host.ValueString()
