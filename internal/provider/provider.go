@@ -44,12 +44,12 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 	}
 
 	var host string
-	if config.Host.Null || config.Host.Unknown {
+	if config.Host.IsNull() || config.Host.IsUnknown() {
 		test := os.Environ()
 		fmt.Print(test)
 		host = os.Getenv("METABASE_HOST")
 	} else {
-		host = config.Host.Value
+		host = config.Host.ValueString()
 	}
 
 	if host == "" {
@@ -60,10 +60,10 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 	}
 
 	var username string
-	if config.Username.Null || config.Username.Unknown {
+	if config.Username.IsNull() || config.Username.IsUnknown() {
 		username = os.Getenv("METABASE_USERNAME")
 	} else {
-		username = config.Username.Value
+		username = config.Username.ValueString()
 	}
 
 	if username == "" {
@@ -74,10 +74,10 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 	}
 
 	var password string
-	if config.Password.Null || config.Password.Unknown {
+	if config.Password.IsNull() || config.Password.IsUnknown() {
 		password = os.Getenv("METABASE_PASSWORD")
 	} else {
-		password = config.Password.Value
+		password = config.Password.ValueString()
 	}
 
 	if password == "" {

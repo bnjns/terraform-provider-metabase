@@ -72,7 +72,7 @@ func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	createReq := client.PermissionsGroupRequest{
-		Name: plan.Name.Value,
+		Name: plan.Name.ValueString(),
 	}
 	groupId, err := g.provider.client.CreatePermissionsGroup(createReq)
 	if err != nil {
@@ -85,7 +85,7 @@ func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.Crea
 
 	// Refresh the state
 	var group PermissionsGroupModel
-	group.Id = types.Int64{Value: groupId}
+	group.Id = types.Int64Value(groupId)
 	diags = g.provider.syncPermissionsGroupWithApi(&group)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -134,9 +134,9 @@ func (g *PermissionsGroupResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	// Update the permissions group
-	groupId := state.Id.Value
+	groupId := state.Id.ValueInt64()
 	updateReq := client.PermissionsGroupRequest{
-		Name: plan.Name.Value,
+		Name: plan.Name.ValueString(),
 	}
 	err := g.provider.client.UpdatePermissionsGroup(groupId, updateReq)
 	if err != nil {
@@ -170,7 +170,7 @@ func (g *PermissionsGroupResource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	groupId := group.Id.Value
+	groupId := group.Id.ValueInt64()
 	err := g.provider.client.DeletePermissionsGroup(groupId)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -186,7 +186,7 @@ func (g *PermissionsGroupResource) ImportState(ctx context.Context, req resource
 
 	// Refresh the state from the API
 	var state PermissionsGroupModel
-	state.Id = types.Int64{Value: groupId}
+	state.Id = types.Int64Value(groupId)
 	diags := g.provider.syncPermissionsGroupWithApi(&state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -199,12 +199,12 @@ func (g *PermissionsGroupResource) ImportState(ctx context.Context, req resource
 }
 
 func mapPermissionsGroupToState(group *client.PermissionsGroup, target *PermissionsGroupModel) {
-	target.Id = types.Int64{Value: group.Id}
-	target.Name = types.String{Value: group.Name}
+	target.Id = types.Int64Value(group.Id)
+	target.Name = types.StringValue(group.Name)
 }
 
 func (p *MetabaseProvider) syncPermissionsGroupWithApi(state *PermissionsGroupModel) diag.Diagnostics {
-	groupId := state.Id.Value
+	groupId := state.Id.ValueInt64()
 
 	groupDetails, err := p.client.GetPermissionsGroup(groupId)
 	if err != nil {
@@ -221,7 +221,7 @@ func (p *MetabaseProvider) syncPermissionsGroupWithApi(state *PermissionsGroupMo
 }
 
 func (state *PermissionsGroupModel) ensureConsistentPlan(plan *PermissionsGroupModel) {
-	if !plan.Name.Unknown {
+	if !plan.Name.IsUnknown() {
 		state.Name = plan.Name
 	}
 }

@@ -1,4 +1,9 @@
 ## 0.5.0 (Unreleased)
+
+NOTES:
+
+* Upgraded the SDK to 0.16
+
 ## 0.4.0 (October 15, 2022)
 
 FEATURES

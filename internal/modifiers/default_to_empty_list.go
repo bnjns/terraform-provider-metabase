@@ -25,16 +25,12 @@ func (r defaultToEmptyListModifier) Modify(ctx context.Context, req tfsdk.Modify
 		return
 	}
 
-	if !config.Null {
+	if !config.IsNull() {
 		return
 	}
 
-	resp.AttributePlan = types.List{
-		ElemType: r.elemType,
-		Elems:    []attr.Value{},
-		Null:     false,
-		Unknown:  false,
-	}
+	resp.AttributePlan, diags = types.ListValue(r.elemType, []attr.Value{})
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r defaultToEmptyListModifier) Description(ctx context.Context) string {

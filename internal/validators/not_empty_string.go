@@ -26,11 +26,11 @@ func (v notEmptyStringValidator) Validate(ctx context.Context, req tfsdk.Validat
 		return
 	}
 
-	if str.Unknown || str.Null {
+	if str.IsUnknown() || str.IsNull() {
 		return
 	}
 
-	if len(str.Value) == 0 {
+	if len(str.ValueString()) == 0 {
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			"Must not be empty string",

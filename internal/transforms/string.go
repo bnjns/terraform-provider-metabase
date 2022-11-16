@@ -6,21 +6,17 @@ import (
 
 func ToTerraformString(str *string) types.String {
 	if str == nil {
-		return types.String{
-			Null:  true,
-			Value: "",
-		}
+		return types.StringNull()
 	} else {
-		return types.String{
-			Value: *str,
-		}
+		return types.StringValue(*str)
 	}
 }
 
 func FromTerraformString(str types.String) *string {
-	if str.Null {
+	if str.IsNull() {
 		return nil
 	} else {
-		return &str.Value
+		val := str.ValueString()
+		return &val
 	}
 }
