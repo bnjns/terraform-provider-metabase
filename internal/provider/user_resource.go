@@ -206,7 +206,7 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 	groupIds := addReservedUserGroups(plan)
 	groupMemberships := mapToGroupMemberships(groupIds)
 	var createReq = client.CreateUserRequest{
-		Email:            plan.Email.Value,
+		Email:            plan.Email.ValueString(),
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
 		LastName:         transforms.FromTerraformString(plan.LastName),
 		GroupMemberships: groupMemberships,
@@ -222,9 +222,9 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// If the `is_superuser` attribute is set to true we need to update the user
-	if !plan.IsSuperuser.Null && !plan.IsSuperuser.Unknown && plan.IsSuperuser.Value {
+	if !plan.IsSuperuser.IsNull() && !plan.IsSuperuser.IsUnknown() && plan.IsSuperuser.ValueBool() {
 		updateReq := client.UpdateUserRequest{
-			Email:            &plan.Email.Value,
+			Email:            transforms.FromTerraformString(plan.Email),
 			FirstName:        transforms.FromTerraformString(plan.FirstName),
 			LastName:         transforms.FromTerraformString(plan.LastName),
 			GroupMemberships: groupMemberships,
@@ -242,7 +242,7 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Refresh the state
 	var user UserResourceModel
-	user.Id = types.Int64{Value: userId}
+	user.Id = types.Int64Value(userId)
 	diags = u.provider.syncUserWithApi(&user)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -294,9 +294,9 @@ func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	groupIds := addReservedUserGroups(plan)
 
 	// Update the user
-	userId := state.Id.Value
+	userId := state.Id.ValueInt64()
 	updateReq := client.UpdateUserRequest{
-		Email:            &plan.Email.Value,
+		Email:            transforms.FromTerraformString(plan.Email),
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
 		LastName:         transforms.FromTerraformString(plan.LastName),
 		GroupMemberships: mapToGroupMemberships(groupIds),
@@ -335,7 +335,7 @@ func (u *UserResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	userId := user.Id.Value
+	userId := user.Id.ValueInt64()
 	err := u.provider.client.DeleteUser(userId)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -365,7 +365,7 @@ func (u *UserResource) ImportState(ctx context.Context, req resource.ImportState
 
 	// Refresh the state from the API
 	var state UserResourceModel
-	state.Id = types.Int64{Value: userId}
+	state.Id = types.Int64Value(userId)
 	diags := u.provider.syncUserWithApi(&state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -382,36 +382,33 @@ func mapUserToState(user *client.User, target *UserResourceModel) {
 	for _, membership := range user.GroupMemberships {
 		// We need to remove the restricted groups from state so they don't conflict
 		if !slices.Contains(validators.ReservedGroupIds, membership.Id) {
-			groupIds = append(groupIds, types.Int64{Value: membership.Id})
+			groupIds = append(groupIds, types.Int64Value(membership.Id))
 		}
 	}
 
-	target.Id = types.Int64{Value: user.Id}
-	target.Email = types.String{Value: user.Email}
+	target.Id = types.Int64Value(user.Id)
+	target.Email = types.StringValue(user.Email)
 	target.FirstName = transforms.ToTerraformString(user.FirstName)
 	target.LastName = transforms.ToTerraformString(user.LastName)
 	target.CommonName = transforms.ToTerraformString(user.CommonName)
 	target.Locale = transforms.ToTerraformString(user.Locale)
-	target.GroupIds = types.List{
-		ElemType: types.Int64Type,
-		Elems:    groupIds,
-	}
-	target.GoogleAuth = types.Bool{Value: user.GoogleAuth}
-	target.LdapAuth = types.Bool{Value: user.LdapAuth}
-	target.IsActive = types.Bool{Value: user.IsActive}
-	target.IsInstaller = types.Bool{Value: user.IsInstaller}
-	target.IsQbnewb = types.Bool{Value: user.IsQbnewb}
-	target.IsSuperuser = types.Bool{Value: user.IsSuperuser}
-	target.HasInvitedSecondUser = types.Bool{Value: user.HasInvitedSecondUser}
-	target.HasQuestionAndDashboard = types.Bool{Value: user.HasQuestionAndDashboard}
-	target.DateJoined = types.String{Value: user.DateJoined}
+	target.GroupIds, _ = types.ListValue(types.Int64Type, groupIds)
+	target.GoogleAuth = types.BoolValue(user.GoogleAuth)
+	target.LdapAuth = types.BoolValue(user.LdapAuth)
+	target.IsActive = types.BoolValue(user.IsActive)
+	target.IsInstaller = types.BoolValue(user.IsInstaller)
+	target.IsQbnewb = types.BoolValue(user.IsQbnewb)
+	target.IsSuperuser = types.BoolValue(user.IsSuperuser)
+	target.HasInvitedSecondUser = types.BoolValue(user.HasInvitedSecondUser)
+	target.HasQuestionAndDashboard = types.BoolValue(user.HasQuestionAndDashboard)
+	target.DateJoined = types.StringValue(user.DateJoined)
 	target.FirstLogin = transforms.ToTerraformString(user.FirstLogin)
 	target.LastLogin = transforms.ToTerraformString(user.LastLogin)
 	target.UpdatedAt = transforms.ToTerraformString(user.UpdatedAt)
 }
 
 func (p *MetabaseProvider) syncUserWithApi(state *UserResourceModel) diag.Diagnostics {
-	userId := state.Id.Value
+	userId := state.Id.ValueInt64()
 
 	userDetails, err := p.client.GetUser(userId)
 	if err != nil {
@@ -448,7 +445,7 @@ func addReservedUserGroups(plan UserResourceModel) *[]int64 {
 		if !slices.Contains(*groupIds, validators.GroupIdAllUsers) {
 			*groupIds = append(*groupIds, validators.GroupIdAllUsers)
 		}
-		if !slices.Contains(*groupIds, validators.GroupIdAdministrators) && plan.IsSuperuser.Value {
+		if !slices.Contains(*groupIds, validators.GroupIdAdministrators) && plan.IsSuperuser.ValueBool() {
 			*groupIds = append(*groupIds, validators.GroupIdAdministrators)
 		}
 	}
@@ -456,43 +453,43 @@ func addReservedUserGroups(plan UserResourceModel) *[]int64 {
 }
 
 func (state *UserResourceModel) ensureConsistentCreate(plan *UserResourceModel) {
-	if !plan.Email.Unknown {
+	if !plan.Email.IsUnknown() {
 		state.Email = plan.Email
 	}
-	if !plan.FirstName.Unknown {
+	if !plan.FirstName.IsUnknown() {
 		state.FirstName = plan.FirstName
 	}
-	if !plan.LastName.Unknown {
+	if !plan.LastName.IsUnknown() {
 		state.LastName = plan.LastName
 	}
-	if !plan.GroupIds.Unknown {
+	if !plan.GroupIds.IsUnknown() {
 		state.GroupIds = plan.GroupIds
 	}
-	if !plan.IsSuperuser.Unknown {
+	if !plan.IsSuperuser.IsUnknown() {
 		state.IsSuperuser = plan.IsSuperuser
 	}
 }
 
 func (state *UserResourceModel) ensureConsistentUpdate(plan *UserResourceModel) {
-	if !plan.Email.Unknown {
+	if !plan.Email.IsUnknown() {
 		state.Email = plan.Email
 	}
-	if !plan.FirstName.Unknown {
+	if !plan.FirstName.IsUnknown() {
 		state.FirstName = plan.FirstName
 	}
-	if !plan.LastName.Unknown {
+	if !plan.LastName.IsUnknown() {
 		state.LastName = plan.LastName
 	}
-	if !plan.GroupIds.Unknown {
+	if !plan.GroupIds.IsUnknown() {
 		state.GroupIds = plan.GroupIds
 	}
-	if !plan.IsSuperuser.Unknown {
+	if !plan.IsSuperuser.IsUnknown() {
 		state.IsSuperuser = plan.IsSuperuser
 	}
-	if !plan.Locale.Unknown {
+	if !plan.Locale.IsUnknown() {
 		state.Locale = plan.Locale
 	}
-	if !plan.IsActive.Unknown {
+	if !plan.IsActive.IsUnknown() {
 		state.IsActive = plan.IsActive
 	}
 }

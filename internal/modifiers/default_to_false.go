@@ -20,11 +20,11 @@ func (r defaultToFalseModifier) Modify(ctx context.Context, req tfsdk.ModifyAttr
 		return
 	}
 
-	if !plan.Null {
+	if !plan.IsNull() {
 		return
 	}
 
-	resp.AttributePlan = types.Bool{Value: false}
+	resp.AttributePlan = types.BoolValue(false)
 }
 
 func (r defaultToFalseModifier) Description(ctx context.Context) string {

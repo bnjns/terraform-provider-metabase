@@ -38,11 +38,11 @@ func (u userNotInReservedGroupsValidator) Validate(ctx context.Context, request 
 		return
 	}
 
-	if groupIds.Unknown || groupIds.Null {
+	if groupIds.IsUnknown() || groupIds.IsNull() {
 		return
 	}
 
-	for _, groupId := range groupIds.Elems {
+	for _, groupId := range groupIds.Elements() {
 		gId, _ := strconv.ParseInt(groupId.String(), 10, 64)
 
 		if slices.Contains(ReservedGroupIds, gId) {
