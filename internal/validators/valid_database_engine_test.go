@@ -26,7 +26,7 @@ func TestIsKnownDatabaseEngineValidator(t *testing.T) {
 	t.Run("an invalid engine should add an error", func(t *testing.T) {
 		request := tfsdk.ValidateAttributeRequest{
 			AttributePath:   path.Empty(),
-			AttributeConfig: types.String{Value: "invalid"},
+			AttributeConfig: types.StringValue("invalid"),
 		}
 		response := tfsdk.ValidateAttributeResponse{}
 
@@ -39,7 +39,7 @@ func TestIsKnownDatabaseEngineValidator(t *testing.T) {
 	t.Run("a valid engine should pass", func(t *testing.T) {
 		request := tfsdk.ValidateAttributeRequest{
 			AttributePath:   path.Empty(),
-			AttributeConfig: types.String{Value: "h2"},
+			AttributeConfig: types.StringValue("h2"),
 		}
 		response := tfsdk.ValidateAttributeResponse{}
 

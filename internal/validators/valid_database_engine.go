@@ -29,17 +29,17 @@ func (v isKnownDatabaseEngineValidator) Validate(ctx context.Context, request tf
 		return
 	}
 
-	if engine.Unknown || engine.Null {
+	if engine.IsUnknown() || engine.IsNull() {
 		return
 	}
 
-	dbEngine := client.DatabaseEngine(engine.Value)
+	dbEngine := client.DatabaseEngine(engine.ValueString())
 
 	if !slices.Contains(client.DatabaseAllowedEngines, dbEngine) {
 		response.Diagnostics.AddAttributeError(
 			request.AttributePath,
 			"Must be a valid database engine",
-			fmt.Sprintf("Database engine '%s' is not a recognised type: %s", engine.Value, client.DatabaseAllowedEngines),
+			fmt.Sprintf("Database engine '%s' is not a recognised type: %s", engine.ValueString(), client.DatabaseAllowedEngines),
 		)
 	}
 }

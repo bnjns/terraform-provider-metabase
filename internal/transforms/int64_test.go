@@ -11,23 +11,22 @@ func TestFromTerraformInt64List(t *testing.T) {
 	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
-		intList := FromTerraformInt64List(types.List{
-			ElemType: types.Int64Type,
-			Null:     true,
-		})
+		intList := FromTerraformInt64List(types.ListNull(types.Int64Type))
 
 		assert.Nil(t, intList)
 	})
 
 	t.Run("non-nil", func(t *testing.T) {
-		intList := FromTerraformInt64List(types.List{
-			ElemType: types.Int64Type,
-			Elems: []attr.Value{
-				types.Int64{Value: 1},
-				types.Int64{Value: 5},
-				types.Int64{Value: 9},
+		tfIntList, _ := types.ListValue(
+			types.Int64Type,
+			[]attr.Value{
+				types.Int64Value(1),
+				types.Int64Value(5),
+				types.Int64Value(9),
 			},
-		})
+		)
+
+		intList := FromTerraformInt64List(tfIntList)
 
 		assert.Equal(t, []int64{1, 5, 9}, *intList)
 	})
@@ -39,16 +38,16 @@ func TestToTerraformInt(t *testing.T) {
 	t.Run("nil", func(t *testing.T) {
 		tfInt := ToTerraformInt(nil)
 
-		assert.True(t, tfInt.Null)
-		assert.Zero(t, tfInt.Value)
+		assert.True(t, tfInt.IsNull())
+		assert.Zero(t, tfInt.ValueInt64())
 	})
 
 	t.Run("non-nil", func(t *testing.T) {
 		num := int64(12)
 		tfInt := ToTerraformInt(&num)
 
-		assert.False(t, tfInt.Null)
-		assert.Equal(t, int64(12), tfInt.Value)
+		assert.False(t, tfInt.IsNull())
+		assert.Equal(t, int64(12), tfInt.ValueInt64())
 	})
 }
 
@@ -56,17 +55,13 @@ func TestFromTerraformInt(t *testing.T) {
 	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
-		num := FromTerraformInt(types.Int64{
-			Null: true,
-		})
+		num := FromTerraformInt(types.Int64Null())
 
 		assert.Nil(t, num)
 	})
 
 	t.Run("non-nil", func(t *testing.T) {
-		num := FromTerraformInt(types.Int64{
-			Value: int64(12),
-		})
+		num := FromTerraformInt(types.Int64Value(12))
 
 		assert.Equal(t, int64(12), *num)
 	})

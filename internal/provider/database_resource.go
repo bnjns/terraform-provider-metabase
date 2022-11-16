@@ -91,7 +91,7 @@ func (d *DatabaseResource) Create(ctx context.Context, request resource.CreateRe
 
 	// Refresh the state
 	var database DatabaseModel
-	database.Id = types.Int64{Value: databaseId}
+	database.Id = types.Int64Value(databaseId)
 	diags = d.provider.syncDatabaseWithApi(&database)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -136,7 +136,7 @@ func (d *DatabaseResource) Update(ctx context.Context, request resource.UpdateRe
 		return
 	}
 
-	databaseId := state.Id.Value
+	databaseId := state.Id.ValueInt64()
 	updateRequest, diags := plan.toRequest()
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -154,7 +154,7 @@ func (d *DatabaseResource) Update(ctx context.Context, request resource.UpdateRe
 
 	// Refresh the state
 	var database DatabaseModel
-	database.Id = types.Int64{Value: databaseId}
+	database.Id = types.Int64Value(databaseId)
 	diags = d.provider.syncDatabaseWithApi(&database)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -174,7 +174,7 @@ func (d *DatabaseResource) Delete(ctx context.Context, request resource.DeleteRe
 		return
 	}
 
-	databaseId := database.Id.Value
+	databaseId := database.Id.ValueInt64()
 	err := d.provider.client.DeleteDatabase(databaseId)
 	if err != nil {
 		response.Diagnostics.AddError(
@@ -190,7 +190,7 @@ func (d *DatabaseResource) ImportState(ctx context.Context, request resource.Imp
 
 	// Refresh the state from the API
 	var state DatabaseModel
-	state.Id = types.Int64{Value: databaseId}
+	state.Id = types.Int64Value(databaseId)
 	diags := d.provider.syncDatabaseWithApi(&state)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -203,7 +203,7 @@ func (d *DatabaseResource) ImportState(ctx context.Context, request resource.Imp
 }
 
 func (d DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) {
-	engine := client.DatabaseEngine(d.Engine.Value)
+	engine := client.DatabaseEngine(d.Engine.ValueString())
 	errs := checkDatabaseDetails(engine, d.Details)
 	if len(errs) > 0 {
 		diags := make([]diag.Diagnostic, len(errs))
@@ -216,13 +216,13 @@ func (d DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) {
 		return nil, diags
 	}
 
-	details := make(map[string]*string, len(d.Details.Elems))
-	for name, detail := range d.Details.Elems {
+	details := make(map[string]*string, len(d.Details.Elements()))
+	for name, detail := range d.Details.Elements() {
 		details[name] = transforms.FromTerraformString(detail.(types.String))
 	}
 	return &client.DatabaseRequest{
 		Engine:      engine,
-		Name:        d.Name.Value,
+		Name:        d.Name.ValueString(),
 		Description: transforms.FromTerraformString(d.Description),
 		Details:     details,
 	}, nil
@@ -289,7 +289,7 @@ func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) []err
 
 	switch engine {
 	case client.EngineH2:
-		if _, exists := details.Elems["db"]; !exists {
+		if _, exists := details.Elements()["db"]; !exists {
 			errs = append(errs, errH2MissingConnString)
 		}
 	}
@@ -298,7 +298,7 @@ func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) []err
 }
 
 func (p *MetabaseProvider) syncDatabaseWithApi(state *DatabaseModel) diag.Diagnostics {
-	databaseId := state.Id.Value
+	databaseId := state.Id.ValueInt64()
 
 	database, err := p.client.GetDatabase(databaseId)
 	if err != nil {
@@ -315,20 +315,17 @@ func (p *MetabaseProvider) syncDatabaseWithApi(state *DatabaseModel) diag.Diagno
 }
 
 func mapDatabaseToState(database *client.Database, target *DatabaseModel) {
-	target.Id = types.Int64{Value: database.Id}
-	target.Engine = types.String{Value: database.Engine}
-	target.Name = types.String{Value: database.Name}
+	target.Id = types.Int64Value(database.Id)
+	target.Engine = types.StringValue(database.Engine)
+	target.Name = types.StringValue(database.Name)
 	target.Description = transforms.ToTerraformString(database.Description)
 
 	// Set the feature list
 	features := make([]attr.Value, len(database.Features))
 	for i, feature := range database.Features {
-		features[i] = types.String{Value: feature}
+		features[i] = types.StringValue(feature)
 	}
-	target.Features = types.List{
-		ElemType: types.StringType,
-		Elems:    features,
-	}
+	target.Features, _ = types.ListValue(types.StringType, features)
 
 	// Set the details map
 	if database.Details != nil {
@@ -336,40 +333,25 @@ func mapDatabaseToState(database *client.Database, target *DatabaseModel) {
 		for name, detail := range *database.Details {
 			details[name] = transforms.ToTerraformString(detail)
 		}
-		target.Details = types.Map{
-			ElemType: types.StringType,
-			Elems:    details,
-		}
+		target.Details, _ = types.MapValue(types.StringType, details)
 	} else {
-		target.Details = types.Map{
-			ElemType: types.StringType,
-			Elems:    map[string]attr.Value{},
-		}
+		target.Details, _ = types.MapValue(types.StringType, map[string]attr.Value{})
 	}
 
 	// Set the schedule map
 	if database.Schedules != nil {
 		schedules := make(map[string]attr.Value, len(*database.Schedules))
 		for name, schedule := range *database.Schedules {
-			schedules[name] = types.Object{
-				AttrTypes: typeDatabaseSchedule.AttributeTypes(),
-				Attrs: map[string]attr.Value{
-					"day":    transforms.ToTerraformString(schedule.Day),
-					"frame":  transforms.ToTerraformString(schedule.Frame),
-					"hour":   transforms.ToTerraformInt(schedule.Hour),
-					"minute": transforms.ToTerraformInt(schedule.Minute),
-					"type":   types.String{Value: schedule.Type},
-				},
-			}
+			schedules[name], _ = types.ObjectValue(typeDatabaseSchedule.AttributeTypes(), map[string]attr.Value{
+				"day":    transforms.ToTerraformString(schedule.Day),
+				"frame":  transforms.ToTerraformString(schedule.Frame),
+				"hour":   transforms.ToTerraformInt(schedule.Hour),
+				"minute": transforms.ToTerraformInt(schedule.Minute),
+				"type":   types.StringValue(schedule.Type),
+			})
 		}
-		target.Schedules = types.Map{
-			ElemType: typeDatabaseSchedule,
-			Elems:    schedules,
-		}
+		target.Schedules, _ = types.MapValue(typeDatabaseSchedule, schedules)
 	} else {
-		target.Schedules = types.Map{
-			ElemType: typeDatabaseSchedule,
-			Elems:    map[string]attr.Value{},
-		}
+		target.Schedules, _ = types.MapValue(typeDatabaseSchedule, map[string]attr.Value{})
 	}
 }

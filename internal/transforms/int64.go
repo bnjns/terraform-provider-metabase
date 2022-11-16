@@ -21,21 +21,17 @@ func FromTerraformInt64List(l types.List) *[]int64 {
 
 func ToTerraformInt(i *int64) types.Int64 {
 	if i == nil {
-		return types.Int64{
-			Null:  true,
-			Value: 0,
-		}
+		return types.Int64Null()
 	} else {
-		return types.Int64{
-			Value: *i,
-		}
+		return types.Int64Value(*i)
 	}
 }
 
 func FromTerraformInt(i types.Int64) *int64 {
-	if i.Null {
+	if i.IsNull() {
 		return nil
 	} else {
-		return &i.Value
+		val := i.ValueInt64()
+		return &val
 	}
 }
