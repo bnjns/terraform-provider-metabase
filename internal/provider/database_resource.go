@@ -16,7 +16,13 @@ import (
 )
 
 var (
-	errH2MissingConnString = errors.New("you must provide the connection string in the 'db' property")
+	errMissingConnString     = errors.New("you must provide the connection string in the 'db' property")
+	errMissingDbName         = errors.New("you must provide the database name in the 'db' property")
+	errMissingHost           = errors.New("you must provide the database hostname/ip in the 'host' property")
+	errMissingPort           = errors.New("you must provide the database port in the 'port' property")
+	errMissingUsername       = errors.New("you must provide the auth username in the 'username' property")
+	errMissingPassword       = errors.New("you must provide the auth password in the 'password' property")
+	errMissingGcpCredentials = errors.New("you must provide the service account credentials as a stringified JSON object in the 'service-account-json' property")
 )
 
 type DatabaseModel struct {
@@ -287,11 +293,42 @@ func getDatabaseAttributes(t blockTypeDatabase) map[string]tfsdk.Attribute {
 func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) []error {
 	var errs []error
 
-	switch engine {
-	case client.EngineH2:
-		if _, exists := details.Elements()["db"]; !exists {
-			errs = append(errs, errH2MissingConnString)
+	var requireDetail = func(detail string, errIfMissing error) {
+		if _, exists := details.Elements()[detail]; !exists {
+			errs = append(errs, errIfMissing)
 		}
+	}
+
+	switch engine {
+	case client.EngineAmazonRedshift, client.EngineMongoDB, client.EngineMySQL, client.EnginePostgres:
+		requireDetail("db", errMissingDbName)
+		requireDetail("host", errMissingHost)
+		requireDetail("port", errMissingPort)
+		requireDetail("username", errMissingUsername)
+		requireDetail("password", errMissingPassword)
+	case client.EngineBigQuery:
+		requireDetail("service-account-json", errMissingGcpCredentials)
+	case client.EngineDruid:
+		requireDetail("host", errMissingHost)
+		requireDetail("port", errMissingPort)
+	case client.EngineGoogleAnalytics:
+		requireDetail("service-account-json", errMissingGcpCredentials)
+	case client.EngineH2:
+		requireDetail("db", errMissingConnString)
+	case client.EngineOracle:
+		// TODO
+	case client.EnginePresto:
+		// TODO
+	case client.EnginePrestoDeprecated:
+		// TODO
+	case client.EngineSnowflake:
+		// TODO
+	case client.EngineSparkSQL:
+		// TODO
+	case client.EngineSQLServer:
+		// TODO
+	case client.EngineSQLite:
+		// TODO
 	}
 
 	return errs

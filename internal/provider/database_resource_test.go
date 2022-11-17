@@ -11,12 +11,81 @@ import (
 func TestCheckDatabaseDetails(t *testing.T) {
 	t.Parallel()
 
-	t.Run("h2 engine", func(t *testing.T) {
-		errs := checkDatabaseDetails(client.EngineH2, types.Map{})
+	testCases := []struct {
+		engine         client.DatabaseEngine
+		expectedErrors []error
+	}{
+		{
+			engine:         client.EngineAmazonRedshift,
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+		},
+		{
+			engine:         client.EngineBigQuery,
+			expectedErrors: []error{errMissingGcpCredentials},
+		},
+		{
+			engine:         client.EngineDruid,
+			expectedErrors: []error{errMissingHost, errMissingPort},
+		},
+		{
+			engine:         client.EngineGoogleAnalytics,
+			expectedErrors: []error{errMissingGcpCredentials},
+		},
+		{
+			engine:         client.EngineH2,
+			expectedErrors: []error{errMissingConnString},
+		},
+		{
+			engine:         client.EngineMongoDB,
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+		},
+		{
+			engine:         client.EngineMySQL,
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+		},
+		{
+			engine:         client.EngineOracle,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EnginePostgres,
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+		},
+		{
+			engine:         client.EnginePresto,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EnginePrestoDeprecated,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EngineSnowflake,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EngineSparkSQL,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EngineSQLServer,
+			expectedErrors: []error{},
+		},
+		{
+			engine:         client.EngineSQLite,
+			expectedErrors: []error{},
+		},
+	}
 
-		assert.Len(t, errs, 1)
-		assert.ErrorIs(t, errs[0], errH2MissingConnString)
-	})
+	for _, testCase := range testCases {
+		t.Run(string(testCase.engine), func(t *testing.T) {
+			errs := checkDatabaseDetails(testCase.engine, types.Map{})
+
+			assert.NotZero(t, len(errs)) // TODO: remove when all engines are tested
+			assert.Len(t, errs, len(testCase.expectedErrors))
+			assert.ElementsMatch(t, errs, testCase.expectedErrors)
+		})
+	}
 }
 
 func TestAccDatabaseResource_H2(t *testing.T) {
