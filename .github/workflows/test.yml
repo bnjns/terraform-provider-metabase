@@ -49,7 +49,8 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
       - run: go mod download
-      - run: |
+      - shell: bash
+        run: |
           go test ./... \
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
       - uses: actions/upload-artifact@v3
@@ -99,7 +100,8 @@ jobs:
           terraform_version: ${{ matrix.terraform }}.*
           terraform_wrapper: false
       - run: go mod download
-      - env:
+      - shell: bash
+        env:
           TF_ACC: "1"
         run: |
           go test -v ./... -run "^TestAcc" \
