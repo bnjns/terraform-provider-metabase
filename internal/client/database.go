@@ -7,13 +7,39 @@ import (
 type DatabaseEngine string
 
 const (
-	EngineH2 DatabaseEngine = "h2"
-	//EnginePostgres DatabaseEngine = "postgres"
+	EngineAmazonRedshift   DatabaseEngine = "redshift"
+	EngineBigQuery         DatabaseEngine = "bigquery"
+	EngineDruid            DatabaseEngine = "druid"
+	EngineGoogleAnalytics  DatabaseEngine = "googleanalytics"
+	EngineH2               DatabaseEngine = "h2"
+	EngineMongoDB          DatabaseEngine = "mongo"
+	EngineMySQL            DatabaseEngine = "mysql"
+	EngineOracle           DatabaseEngine = "oracle"
+	EnginePostgres         DatabaseEngine = "postgres"
+	EnginePresto           DatabaseEngine = "presto-jdbc"
+	EnginePrestoDeprecated DatabaseEngine = "presto"
+	EngineSnowflake        DatabaseEngine = "snowflake"
+	EngineSparkSQL         DatabaseEngine = "sparksql"
+	EngineSQLServer        DatabaseEngine = "sqlserver"
+	EngineSQLite           DatabaseEngine = "sqlite"
 )
 
 var DatabaseAllowedEngines = []DatabaseEngine{
+	EngineAmazonRedshift,
+	EngineBigQuery,
+	EngineDruid,
+	EngineGoogleAnalytics,
 	EngineH2,
-	//EnginePostgres,
+	EngineMongoDB,
+	EngineMySQL,
+	EngineOracle,
+	EnginePostgres,
+	EnginePresto,
+	EnginePrestoDeprecated,
+	EngineSnowflake,
+	EngineSparkSQL,
+	EngineSQLServer,
+	EngineSQLite,
 }
 
 type DatabaseDetails map[string]*string
