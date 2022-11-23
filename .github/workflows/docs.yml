@@ -22,7 +22,9 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
       - run: go generate ./...
-      - name: git diff
+      - shell: bash
+        name: git diff
         run: |
-          git diff --compact-summary --exit-code || \
+          git add .
+          git diff --compact-summary --exit-code --quiet HEAD || \
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
