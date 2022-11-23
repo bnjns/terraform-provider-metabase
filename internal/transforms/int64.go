@@ -18,3 +18,20 @@ func FromTerraformInt64List(l types.List) *[]int64 {
 		return &newList
 	}
 }
+
+func ToTerraformInt(i *int64) types.Int64 {
+	if i == nil {
+		return types.Int64Null()
+	} else {
+		return types.Int64Value(*i)
+	}
+}
+
+func FromTerraformInt(i types.Int64) *int64 {
+	if i.IsNull() {
+		return nil
+	} else {
+		val := i.ValueInt64()
+		return &val
+	}
+}

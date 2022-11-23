@@ -1,136 +1,66 @@
 package client
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/stretchr/testify/assert"
-	"net/http"
 	"testing"
 )
 
-func TestClient_GetPermissionsGroup(t *testing.T) {
-	server := createMockServer(func(writer http.ResponseWriter, request *http.Request) bool {
-		if request.Method == "GET" && request.URL.Path == "/api/permissions/group/3" {
-			writer.WriteHeader(200)
-			writer.Header().Set("Content-Type", "application.json")
-			writer.Write([]byte(`
-{
-	"id": 3,
-	"name": "Example Group"
-}
-`))
-			return true
-		}
+func TestClient_PermissionsGroup(t *testing.T) {
+	client, _ := NewClient(testServerUrl, testUsername, testPassword)
 
-		return false
-	})
-	defer server.Close()
+	newGroupName := acctest.RandString(10)
+	updatedGroupName := acctest.RandString(11)
 
-	client, _ := NewClient(server.URL, testUsername, testPassword)
-
-	t.Run("requesting a permissions group that exists should return that group", func(t *testing.T) {
-		group, err := client.GetPermissionsGroup(3)
+	t.Run("you should be able to create a valid permissions group", func(t *testing.T) {
+		groupId, err := client.CreatePermissionsGroup(PermissionsGroupRequest{
+			Name: newGroupName,
+		})
 
 		assert.Nil(t, err)
-		assert.Equal(t, int64(3), group.Id)
-		assert.Equal(t, "Example Group", group.Name)
+		assert.NotZero(t, groupId)
+
+		t.Run("you should be able to fetch the permission group", func(t *testing.T) {
+			group, err := client.GetPermissionsGroup(groupId)
+
+			assert.NoError(t, err)
+			assert.NotZero(t, groupId)
+			assert.Equal(t, newGroupName, group.Name)
+		})
+
+		t.Run("you should be able to update the permission group", func(t *testing.T) {
+			err := client.UpdatePermissionsGroup(groupId, PermissionsGroupRequest{
+				Name: updatedGroupName,
+			})
+
+			assert.Nil(t, err)
+		})
+
+		t.Run("you should be able to delete the permissions group", func(t *testing.T) {
+			err := client.DeletePermissionsGroup(groupId)
+
+			assert.NoError(t, err)
+		})
 	})
 
 	t.Run("requesting a permissions group that doesn't exist should return an error", func(t *testing.T) {
-		group, err := client.GetPermissionsGroup(4)
+		group, err := client.GetPermissionsGroup(1000)
 
 		assert.Nil(t, group)
-		assert.ErrorContains(t, err, "not found")
-	})
-}
-
-func TestClient_CreatePermissionsGroup(t *testing.T) {
-	server := createMockServer(func(writer http.ResponseWriter, request *http.Request) bool {
-		if request.Method == "POST" && request.URL.Path == "/api/permissions/group" {
-			writer.WriteHeader(200)
-			writer.Header().Set("Content-Type", "application.json")
-			writer.Write([]byte(`
-{
-	"id": 3,
-	"name": "Example Group"
-}
-`))
-			return true
-		}
-
-		return false
-	})
-	defer server.Close()
-
-	client, _ := NewClient(server.URL, testUsername, testPassword)
-
-	t.Run("creating a permissions group should return the group ID", func(t *testing.T) {
-		createReq := PermissionsGroupRequest{
-			Name: "Example Group",
-		}
-		groupId, err := client.CreatePermissionsGroup(createReq)
-
-		assert.Nil(t, err)
-		assert.Equal(t, int64(3), groupId)
-	})
-}
-
-func TestClient_UpdatePermissionsGroup(t *testing.T) {
-	server := createMockServer(func(writer http.ResponseWriter, request *http.Request) bool {
-		if request.Method == "PUT" && request.URL.Path == "/api/permissions/group/3" {
-			writer.WriteHeader(200)
-			writer.Header().Set("Content-Type", "application.json")
-			writer.Write([]byte(`
-{
-	"id": 3,
-	"name": "Updated"
-}
-`))
-			return true
-		}
-
-		return false
-	})
-	defer server.Close()
-
-	client, _ := NewClient(server.URL, testUsername, testPassword)
-	updateReq := PermissionsGroupRequest{
-		Name: "Updated",
-	}
-
-	t.Run("updating a permissions group that exists should be handled successfully", func(t *testing.T) {
-		err := client.UpdatePermissionsGroup(3, updateReq)
-
-		assert.Nil(t, err)
+		assert.ErrorIs(t, err, ErrNotFound)
 	})
 
-	t.Run("deleting a permissions group that doesn't exist should return an error", func(t *testing.T) {
-		err := client.UpdatePermissionsGroup(4, updateReq)
+	t.Run("updating a permissions group that doesn't exist should return an error", func(t *testing.T) {
+		err := client.UpdatePermissionsGroup(1000, PermissionsGroupRequest{
+			Name: acctest.RandString(10),
+		})
 
-		assert.ErrorContains(t, err, "not found")
-	})
-}
-
-func TestClient_DeletePermissionsGroup(t *testing.T) {
-	server := createMockServer(func(writer http.ResponseWriter, request *http.Request) bool {
-		if request.Method == "DELETE" && request.URL.Path == "/api/permissions/group/3" {
-			writer.WriteHeader(204)
-			return true
-		}
-
-		return false
-	})
-	defer server.Close()
-
-	client, _ := NewClient(server.URL, testUsername, testPassword)
-
-	t.Run("deleting a permissions group that exists should be handled successfully", func(t *testing.T) {
-		err := client.DeletePermissionsGroup(3)
-
-		assert.Nil(t, err)
+		assert.ErrorContains(t, err, "Not found.")
 	})
 
-	t.Run("deleting a permissions group that doesn't exist should return an error", func(t *testing.T) {
-		err := client.DeletePermissionsGroup(4)
+	t.Run("deleting a permissions group that doesn't exist should be gracefully handled", func(t *testing.T) {
+		err := client.DeletePermissionsGroup(1000)
 
-		assert.ErrorContains(t, err, "not found")
+		assert.NoError(t, err)
 	})
 }
