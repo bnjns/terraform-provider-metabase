@@ -17,7 +17,7 @@ func TestCheckDatabaseDetails(t *testing.T) {
 	}{
 		{
 			engine:         client.EngineAmazonRedshift,
-			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EngineBigQuery,
@@ -25,7 +25,7 @@ func TestCheckDatabaseDetails(t *testing.T) {
 		},
 		{
 			engine:         client.EngineDruid,
-			expectedErrors: []error{errMissingHost, errMissingPort},
+			expectedErrors: []error{errMissingHost},
 		},
 		{
 			engine:         client.EngineGoogleAnalytics,
@@ -37,43 +37,39 @@ func TestCheckDatabaseDetails(t *testing.T) {
 		},
 		{
 			engine:         client.EngineMongoDB,
-			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EngineMySQL,
-			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
-		},
-		{
-			engine:         client.EngineOracle,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EnginePostgres,
-			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingPort, errMissingUsername, errMissingPassword},
+			expectedErrors: []error{errMissingDbName, errMissingHost, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EnginePresto,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingHost, errMissingUsername, errMissingPassword, errMissingCatalog},
 		},
 		{
 			engine:         client.EnginePrestoDeprecated,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingHost, errMissingUsername, errMissingPassword, errMissingCatalog},
 		},
 		{
 			engine:         client.EngineSnowflake,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingAccountName, errMissingUsername, errMissingPassword, errMissingWarehouse, errMissingDbName},
 		},
 		{
 			engine:         client.EngineSparkSQL,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingHost, errMissingDbName, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EngineSQLServer,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingHost, errMissingDbName, errMissingUsername, errMissingPassword},
 		},
 		{
 			engine:         client.EngineSQLite,
-			expectedErrors: []error{},
+			expectedErrors: []error{errMissingDbPath},
 		},
 	}
 

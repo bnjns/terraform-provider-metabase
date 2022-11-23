@@ -17,12 +17,16 @@ import (
 
 var (
 	errMissingConnString     = errors.New("you must provide the connection string in the 'db' property")
+	errMissingDbPath         = errors.New("you must provide the path to the DB file in the 'db' property")
 	errMissingDbName         = errors.New("you must provide the database name in the 'db' property")
 	errMissingHost           = errors.New("you must provide the database hostname/ip in the 'host' property")
 	errMissingPort           = errors.New("you must provide the database port in the 'port' property")
 	errMissingUsername       = errors.New("you must provide the auth username in the 'username' property")
 	errMissingPassword       = errors.New("you must provide the auth password in the 'password' property")
 	errMissingGcpCredentials = errors.New("you must provide the service account credentials as a stringified JSON object in the 'service-account-json' property")
+	errMissingCatalog        = errors.New("you must provide the catalog in the 'catalog' property")
+	errMissingWarehouse      = errors.New("you must provide the warehouse in the 'warehouse' property")
+	errMissingAccountName    = errors.New("you must provide the account name in the 'account' property")
 )
 
 type DatabaseModel struct {
@@ -300,35 +304,32 @@ func checkDatabaseDetails(engine client.DatabaseEngine, details types.Map) []err
 	}
 
 	switch engine {
-	case client.EngineAmazonRedshift, client.EngineMongoDB, client.EngineMySQL, client.EnginePostgres:
+	case client.EngineAmazonRedshift, client.EngineMongoDB, client.EngineMySQL, client.EnginePostgres, client.EngineSparkSQL, client.EngineSQLServer:
 		requireDetail("db", errMissingDbName)
 		requireDetail("host", errMissingHost)
-		requireDetail("port", errMissingPort)
 		requireDetail("username", errMissingUsername)
 		requireDetail("password", errMissingPassword)
 	case client.EngineBigQuery:
 		requireDetail("service-account-json", errMissingGcpCredentials)
 	case client.EngineDruid:
 		requireDetail("host", errMissingHost)
-		requireDetail("port", errMissingPort)
 	case client.EngineGoogleAnalytics:
 		requireDetail("service-account-json", errMissingGcpCredentials)
 	case client.EngineH2:
 		requireDetail("db", errMissingConnString)
-	case client.EngineOracle:
-		// TODO
-	case client.EnginePresto:
-		// TODO
-	case client.EnginePrestoDeprecated:
-		// TODO
+	case client.EnginePresto, client.EnginePrestoDeprecated:
+		requireDetail("host", errMissingHost)
+		requireDetail("username", errMissingUsername)
+		requireDetail("password", errMissingPassword)
+		requireDetail("catalog", errMissingCatalog)
 	case client.EngineSnowflake:
-		// TODO
-	case client.EngineSparkSQL:
-		// TODO
-	case client.EngineSQLServer:
-		// TODO
+		requireDetail("account", errMissingAccountName)
+		requireDetail("username", errMissingUsername)
+		requireDetail("password", errMissingPassword)
+		requireDetail("warehouse", errMissingWarehouse)
+		requireDetail("db", errMissingDbName)
 	case client.EngineSQLite:
-		// TODO
+		requireDetail("db", errMissingDbPath)
 	}
 
 	return errs
