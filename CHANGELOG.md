@@ -2,7 +2,7 @@
 
 NOTES:
 
-* Upgraded the SDK to 0.16
+* Upgraded the SDK to 1.x
 
 ## 0.4.0 (October 15, 2022)
 
