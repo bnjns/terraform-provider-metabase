@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
@@ -16,9 +17,11 @@ const (
 
 var ReservedGroupIds = []int64{GroupIdAllUsers, GroupIdAdministrators}
 
-type userNotInReservedGroupsValidator struct{}
+type userNotInReservedGroupsValidator struct {
+	validator.String
+}
 
-func UserNotInReservedGroupsValidator() tfsdk.AttributeValidator {
+func UserNotInReservedGroupsValidator() validator.List {
 	return userNotInReservedGroupsValidator{}
 }
 
@@ -30,9 +33,9 @@ func (u userNotInReservedGroupsValidator) MarkdownDescription(ctx context.Contex
 	return u.Description(ctx)
 }
 
-func (u userNotInReservedGroupsValidator) Validate(ctx context.Context, request tfsdk.ValidateAttributeRequest, response *tfsdk.ValidateAttributeResponse) {
+func (u userNotInReservedGroupsValidator) ValidateList(ctx context.Context, request validator.ListRequest, response *validator.ListResponse) {
 	var groupIds types.List
-	diags := tfsdk.ValueAs(ctx, request.AttributeConfig, &groupIds)
+	diags := tfsdk.ValueAs(ctx, request.ConfigValue, &groupIds)
 	response.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
@@ -47,7 +50,7 @@ func (u userNotInReservedGroupsValidator) Validate(ctx context.Context, request 
 
 		if slices.Contains(ReservedGroupIds, gId) {
 			response.Diagnostics.AddAttributeError(
-				request.AttributePath,
+				request.Path,
 				"Must not contain reserved group ID",
 				fmt.Sprintf("Config contains reserved group ID %d which must not be explicitly set.", gId),
 			)

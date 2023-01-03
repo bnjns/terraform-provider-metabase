@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 	"terraform-provider-metabase/internal/client"
@@ -27,40 +28,27 @@ type PermissionsGroupModel struct {
 
 type blockTypePermissionsGroup int
 
-const (
-	blockTypeResourcePermissionsGroup blockTypePermissionsGroup = iota
-	blockTypeDataSourcePermissionsGroup
-)
-
-func getPermissionsGroupAttributes(t blockTypePermissionsGroup) map[string]tfsdk.Attribute {
-	return map[string]tfsdk.Attribute{
-		"id": {
-			Type:        types.Int64Type,
-			Description: "The ID of the permissions group.",
-			Required:    t == blockTypeDataSourcePermissionsGroup,
-			Computed:    t == blockTypeResourcePermissionsGroup,
-		},
-		"name": {
-			Type:        types.StringType,
-			Description: "The name of the permissions group.",
-			Required:    t == blockTypeResourcePermissionsGroup,
-			Computed:    t == blockTypeDataSourcePermissionsGroup,
-			Validators: []tfsdk.AttributeValidator{
-				validators.NotEmptyStringValidator(),
-			},
-		},
-	}
-}
-
 func (g *PermissionsGroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_permissions_group"
 }
 
-func (g *PermissionsGroupResource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (g *PermissionsGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "Allows for creating and managing permissions groups (user groups) in Metabase.",
-		Attributes:  getPermissionsGroupAttributes(blockTypeResourcePermissionsGroup),
-	}, nil
+		Attributes: map[string]schema.Attribute{
+			"id": schema.Int64Attribute{
+				Description: "The ID of the permissions group.",
+				Computed:    true,
+			},
+			"name": schema.StringAttribute{
+				Description: "The name of the permissions group.",
+				Required:    true,
+				Validators: []validator.String{
+					validators.NotEmptyStringValidator(),
+				},
+			},
+		},
+	}
 }
 
 func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

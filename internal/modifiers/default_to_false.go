@@ -2,19 +2,22 @@ package modifiers
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type defaultToFalseModifier struct{}
+type defaultToFalseModifier struct {
+	planmodifier.Bool
+}
 
-func DefaultToFalseModifier() tfsdk.AttributePlanModifier {
+func DefaultToFalseModifier() planmodifier.Bool {
 	return defaultToFalseModifier{}
 }
 
-func (r defaultToFalseModifier) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
+func (r defaultToFalseModifier) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
 	var plan types.Bool
-	diags := tfsdk.ValueAs(ctx, req.AttributePlan, &plan)
+	diags := tfsdk.ValueAs(ctx, req.PlanValue, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -24,7 +27,7 @@ func (r defaultToFalseModifier) Modify(ctx context.Context, req tfsdk.ModifyAttr
 		return
 	}
 
-	resp.AttributePlan = types.BoolValue(false)
+	resp.PlanValue = types.BoolValue(false)
 }
 
 func (r defaultToFalseModifier) Description(ctx context.Context) string {

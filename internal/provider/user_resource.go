@@ -6,7 +6,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
 	"strconv"
@@ -51,148 +53,110 @@ type UserResourceModel struct {
 
 type blockTypeUser int
 
-const (
-	blockTypeResourceUser blockTypeUser = iota
-	blockTypeDataSourceUser
-	blockTypeDataSourceCurrentUser
-)
-
-func getUserAttributes(t blockTypeUser) map[string]tfsdk.Attribute {
-	groupDescription := "The IDs of the user groups the user is a member of."
-	if t == blockTypeResourceUser {
-		groupDescription += " The 'All Users' group is automatically added by Metabase and you can use `is_superuser` to add the user to the 'Administrators' group."
-	}
-
-	return map[string]tfsdk.Attribute{
-		"id": {
-			Type:        types.Int64Type,
-			Description: "The ID of the user.",
-			Required:    t == blockTypeDataSourceUser,
-			Computed:    t != blockTypeDataSourceUser,
-		},
-		"email": {
-			Type:        types.StringType,
-			Description: "The email address of the user.",
-			Required:    t == blockTypeResourceUser,
-			Computed:    t != blockTypeResourceUser,
-			Validators: []tfsdk.AttributeValidator{
-				validators.NotEmptyStringValidator(),
-			},
-		},
-		"first_name": {
-			Type:        types.StringType,
-			Description: "The first name of the user.",
-			Optional:    t == blockTypeResourceUser,
-			Computed:    t != blockTypeResourceUser,
-			Validators: []tfsdk.AttributeValidator{
-				validators.NotEmptyStringValidator(),
-			},
-		},
-		"last_name": {
-			Type:        types.StringType,
-			Description: "The last name of the user.",
-			Optional:    t == blockTypeResourceUser,
-			Computed:    t != blockTypeResourceUser,
-			Validators: []tfsdk.AttributeValidator{
-				validators.NotEmptyStringValidator(),
-			},
-		},
-		"common_name": {
-			Type:        types.StringType,
-			Description: "The user's common name, which is a combination of their first and last names.",
-			Computed:    true,
-		},
-		"locale": {
-			Type:        types.StringType,
-			Description: "The locale the user has configured for themselves. The site default is used if this is nil.",
-			Optional:    t == blockTypeResourceUser,
-			Computed:    t != blockTypeResourceUser,
-		},
-		"group_ids": {
-			Type:        types.ListType{ElemType: types.Int64Type},
-			Description: groupDescription,
-			Optional:    t == blockTypeResourceUser,
-			Computed:    true,
-			Validators: []tfsdk.AttributeValidator{
-				validators.UserNotInReservedGroupsValidator(),
-			},
-			PlanModifiers: tfsdk.AttributePlanModifiers{
-				modifiers.DefaultToEmptyListModifier(types.Int64Type),
-			},
-		},
-		"google_auth": {
-			Type:        types.BoolType,
-			Description: "Whether the user was created via Google SSO. Note, if this is enabled then username/password log-in will not be possible.",
-			Computed:    true,
-		},
-		"ldap_auth": {
-			Type:        types.BoolType,
-			Description: "Whether the user was created via LDAP. Note, if this is enabled then username/password log-in will not be possible.",
-			Computed:    true,
-		},
-		"is_active": {
-			Type:        types.BoolType,
-			Description: "Used to indicate whether a user is active or if they've been deleted.",
-			Computed:    true,
-		},
-		"is_installer": {
-			Type:     types.BoolType,
-			Computed: true,
-		},
-		"is_qbnewb": {
-			Type:        types.BoolType,
-			Description: "If false then the user has been introduced to how the Query Builder works.",
-			Computed:    true,
-		},
-		"is_superuser": {
-			Type:        types.BoolType,
-			Description: "Whether the user is a member of the built-in Admin group.",
-			Optional:    t == blockTypeResourceUser,
-			Computed:    true,
-			PlanModifiers: tfsdk.AttributePlanModifiers{
-				modifiers.DefaultToFalseModifier(),
-			},
-		},
-		"has_invited_second_user": {
-			Type:     types.BoolType,
-			Computed: true,
-		},
-		"has_question_and_dashboard": {
-			Type:     types.BoolType,
-			Computed: true,
-		},
-		"date_joined": {
-			Type:        types.StringType,
-			Description: "The timestamp of when the user was created.",
-			Computed:    true,
-		},
-		"first_login": {
-			Type:        types.StringType,
-			Description: "The timestamp of when the user first logged into Metabase.",
-			Computed:    true,
-		},
-		"last_login": {
-			Type:        types.StringType,
-			Description: "The timestamp of the user's most recent login to Metabase.",
-			Computed:    true,
-		},
-		"updated_at": {
-			Type:        types.StringType,
-			Description: "The timestamp of when the user was last updated.",
-			Computed:    true,
-		},
-	}
-}
-
 func (u *UserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_user"
 }
 
-func (u *UserResource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (u *UserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "Allows for creating and managing users in Metabase.",
-		Attributes:  getUserAttributes(blockTypeResourceUser),
-	}, nil
+		Attributes: map[string]schema.Attribute{
+			"id": schema.Int64Attribute{
+				Description: "The ID of the user.",
+				Computed:    true,
+			},
+			"email": schema.StringAttribute{
+				Description: "The email address of the user.",
+				Required:    true,
+				Validators: []validator.String{
+					validators.NotEmptyStringValidator(),
+				},
+			},
+			"first_name": schema.StringAttribute{
+				Description: "The first name of the user.",
+				Optional:    true,
+				Validators: []validator.String{
+					validators.NotEmptyStringValidator(),
+				},
+			},
+			"last_name": schema.StringAttribute{
+				Description: "The last name of the user.",
+				Optional:    true,
+				Validators: []validator.String{
+					validators.NotEmptyStringValidator(),
+				},
+			},
+			"common_name": schema.StringAttribute{
+				Description: "The user's common name, which is a combination of their first and last names.",
+				Computed:    true,
+			},
+			"locale": schema.StringAttribute{
+				Description: "The locale the user has configured for themselves. The site default is used if this is nil.",
+				Optional:    true,
+			},
+			"group_ids": schema.ListAttribute{
+				ElementType: types.Int64Type,
+				Description: "The IDs of the user groups the user is a member of. The 'All Users' group is automatically added by Metabase and you can use `is_superuser` to add the user to the 'Administrators' group.",
+				Optional:    true,
+				Computed:    true,
+				Validators: []validator.List{
+					validators.UserNotInReservedGroupsValidator(),
+				},
+				PlanModifiers: []planmodifier.List{
+					modifiers.DefaultToEmptyListModifier(types.Int64Type),
+				},
+			},
+			"google_auth": schema.BoolAttribute{
+				Description: "Whether the user was created via Google SSO. Note, if this is enabled then username/password log-in will not be possible.",
+				Computed:    true,
+			},
+			"ldap_auth": schema.BoolAttribute{
+				Description: "Whether the user was created via LDAP. Note, if this is enabled then username/password log-in will not be possible.",
+				Computed:    true,
+			},
+			"is_active": schema.BoolAttribute{
+				Description: "Used to indicate whether a user is active or if they've been deleted.",
+				Computed:    true,
+			},
+			"is_installer": schema.BoolAttribute{
+				Computed: true,
+			},
+			"is_qbnewb": schema.BoolAttribute{
+				Description: "If false then the user has been introduced to how the Query Builder works.",
+				Computed:    true,
+			},
+			"is_superuser": schema.BoolAttribute{
+				Description: "Whether the user is a member of the built-in Admin group.",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					modifiers.DefaultToFalseModifier(),
+				},
+			},
+			"has_invited_second_user": schema.BoolAttribute{
+				Computed: true,
+			},
+			"has_question_and_dashboard": schema.BoolAttribute{
+				Computed: true,
+			},
+			"date_joined": schema.StringAttribute{
+				Description: "The timestamp of when the user was created.",
+				Computed:    true,
+			},
+			"first_login": schema.StringAttribute{
+				Description: "The timestamp of when the user first logged into Metabase.",
+				Computed:    true,
+			},
+			"last_login": schema.StringAttribute{
+				Description: "The timestamp of the user's most recent login to Metabase.",
+				Computed:    true,
+			},
+			"updated_at": schema.StringAttribute{
+				Description: "The timestamp of when the user was last updated.",
+				Computed:    true,
+			},
+		},
+	}
 }
 
 func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

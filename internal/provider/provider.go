@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
 
 	"terraform-provider-metabase/internal/client"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -129,27 +128,24 @@ func (p *MetabaseProvider) DataSources(ctx context.Context) []func() datasource.
 	}
 }
 
-func (p *MetabaseProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"host": {
-				Type:        types.StringType,
+func (p *MetabaseProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
 				Description: "The Host URL of the Metabase instance to manage. Can also be set with the METABASE_HOST environment variable.",
 				Optional:    true,
 			},
-			"username": {
-				Type:        types.StringType,
+			"username": schema.StringAttribute{
 				Description: "The username of the super user to use when interacting with Metabase. Can also be set with the METABASE_USERNAME environment variable.",
 				Optional:    true,
 			},
-			"password": {
-				Type:        types.StringType,
+			"password": schema.StringAttribute{
 				Description: "The password of the super user to use when interacting with Metabase. Can also be set with the METABASE_PASSWORD environment variable.",
 				Optional:    true,
 				Sensitive:   true,
 			},
 		},
-	}, nil
+	}
 }
 
 func New(version string) func() provider.Provider {
