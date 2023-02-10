@@ -16,7 +16,7 @@ services:
       MB_PASSWORD_COMPLEXITY: weak
       MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ["CMD-SHELL", "curl -s -f http://localhost:3000/api/health | grep -q ok"]
       interval: 10s
       timeout: 5s
       retries: 5
