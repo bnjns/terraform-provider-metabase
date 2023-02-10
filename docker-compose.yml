@@ -5,26 +5,34 @@ networks:
 
 services:
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.44.5
+    container_name: mb-metabase
     networks:
       - main
     ports:
-      - 3000:3000
+      - '3000:3000'
     environment:
+      MB_DISABLE_SESSION_THROTTLE: 'true'
       MB_PASSWORD_COMPLEXITY: weak
       MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: 'false'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 5s
-      timeout: 1s
-      retries: 11
-    restart: on-failure
-    
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   postgres:
     image: postgres:14
+    container_name: mb-postgres
     networks:
       - main
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
