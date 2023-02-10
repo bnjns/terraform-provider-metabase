@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"terraform-provider-metabase/internal/schema"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -18,19 +18,7 @@ func (g *PermissionsGroupDataSource) Metadata(ctx context.Context, req datasourc
 }
 
 func (g *PermissionsGroupDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Gets the details of the provided permissions (user) group.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.Int64Attribute{
-				Description: "The ID of the permissions group.",
-				Required:    true,
-			},
-			"name": schema.StringAttribute{
-				Description: "The name of the permissions group.",
-				Computed:    true,
-			},
-		},
-	}
+	resp.Schema = schema.PermissionsGroupDataSource()
 }
 
 func (g *PermissionsGroupDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
