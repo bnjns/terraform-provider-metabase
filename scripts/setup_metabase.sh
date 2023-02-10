@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -o pipefail
 
 host="${METABASE_HOST:-http://localhost:3000}"
 username="${METABASE_USERNAME:-example@example.com}"
 password="${METABASE_PASSWORD:-password}"
 
-setupToken=$(curl -s --fail "${host}/api/session/properties" | jq -r '."setup-token"')
+echo "Fetching the setup token from $host"
+setupToken=$(curl -s --fail "${host}/api/session/properties" | jq -er '."setup-token"')
+
+if [ $? -ne 0 ]; then
+  echo "Failed to extract setup token"
+  exit $?
+fi
 
 request=$(jq -n "{
   database: null,
@@ -26,6 +32,7 @@ request=$(jq -n "{
   token: \"${setupToken}\"
 }")
 
+echo "Sending request to setup metabase"
 curl -s --fail \
   -X POST \
   -H "Content-Type: application/json" \

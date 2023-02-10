@@ -84,11 +84,10 @@ remember the username (email) and password so that you can configure the provide
 
 #### Using Docker
 
-Simply use the included [`docker`](docker) set-up to run Metabase:
+Simply use the included [`docker`](docker-compose.yml) set-up to run Metabase:
 
 ```sh
-$ cd docker && \
-    docker-compose up metabase
+$ docker-compose up metabase
 ```
 
 This will start Metabase on port 3000.
@@ -134,26 +133,23 @@ go generate
 
 ### Running the tests
 
-Make sure you have [Metabase running](#running-metabase) and configured using the included script, as the provider tests
-require an actual instance of Metabase to interact with.
+Make sure you have [Metabase running](#running-metabase) and configured using the included script, as both the client
+and provider tests require an actual instance of Metabase to interact with.
 
 To run the unit tests for the client:
 
 ```sh
-$ go test -v ./internal/client/
+$ go test -v ./...
 ```
 
 To run the provider acceptance tests:
 
 ```sh
-$ TF_ACC=1 go test -v ./internal/provider/
+$ TF_ACC=1 go test -v ./... -run "^TestAcc"
 ```
 
-To run all tests:
-
-```sh
-$ go test -v ./...
-```
+> **Note:** While tests should randomly generate unique names in order to prevent conflicts, you may need to stop and
+> restart Metabase between test runs (ensure you use `--force-recreate` if using Docker).
 
 ## 🚀 Releasing
 
