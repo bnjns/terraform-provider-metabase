@@ -5,6 +5,7 @@ host="${METABASE_HOST:-http://localhost:3000}"
 username="${METABASE_USERNAME:-example@example.com}"
 password="${METABASE_PASSWORD:-password}"
 
+echo "Fetching the setup token from $host"
 setupToken=$(curl -s --fail "${host}/api/session/properties" | jq -er '."setup-token"')
 
 if [ $? -ne 0 ]; then
@@ -31,6 +32,7 @@ request=$(jq -n "{
   token: \"${setupToken}\"
 }")
 
+echo "Sending request to setup metabase"
 curl -s --fail \
   -X POST \
   -H "Content-Type: application/json" \
