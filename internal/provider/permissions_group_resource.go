@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 	"terraform-provider-metabase/internal/client"
-	"terraform-provider-metabase/internal/validators"
+	"terraform-provider-metabase/internal/schema"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -33,22 +31,7 @@ func (g *PermissionsGroupResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (g *PermissionsGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Allows for creating and managing permissions groups (user groups) in Metabase.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.Int64Attribute{
-				Description: "The ID of the permissions group.",
-				Computed:    true,
-			},
-			"name": schema.StringAttribute{
-				Description: "The name of the permissions group.",
-				Required:    true,
-				Validators: []validator.String{
-					validators.NotEmptyStringValidator(),
-				},
-			},
-		},
-	}
+	resp.Schema = schema.PermissionsGroupResource()
 }
 
 func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

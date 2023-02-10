@@ -3,6 +3,7 @@
 NOTES:
 
 * Upgraded the SDK to 1.x
+* Moved schema definitions to their own package
 
 ## 0.4.0 (October 15, 2022)
 
