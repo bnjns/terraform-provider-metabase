@@ -19,6 +19,10 @@ func (v notEmptyStringValidator) Description(ctx context.Context) string {
 	return "string must be nil or empty"
 }
 
+func (v notEmptyStringValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
 func (v notEmptyStringValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	var str types.String
 	diags := tfsdk.ValueAs(ctx, req.ConfigValue, &str)

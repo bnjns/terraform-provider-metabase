@@ -26,7 +26,7 @@ func UserNotInReservedGroupsValidator() validator.List {
 }
 
 func (u userNotInReservedGroupsValidator) Description(ctx context.Context) string {
-	return ""
+	return "groups list must not contain a reserved group"
 }
 
 func (u userNotInReservedGroupsValidator) MarkdownDescription(ctx context.Context) string {
