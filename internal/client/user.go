@@ -1,6 +1,9 @@
 package client
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type GroupMembership struct {
 	Id int64 `json:"id"`
@@ -127,7 +130,13 @@ func (c *Client) ReactivateUser(userId int64) error {
 	var resp User
 	err := c.doPut(fmt.Sprintf("/user/%d/reactivate", userId), nil, &resp)
 	if err != nil {
-		return nil
+		if err.Error() == "Not found." {
+			return ErrNotFound
+		} else if strings.Contains(err.Error(), "Not able to reactivate an active user") {
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	if !resp.IsActive {

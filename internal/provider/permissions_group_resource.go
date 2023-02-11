@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
+	"terraform-provider-metabase/internal/utils"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -23,8 +24,6 @@ type PermissionsGroupModel struct {
 	Id   types.Int64  `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
-
-type blockTypePermissionsGroup int
 
 func (g *PermissionsGroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_permissions_group"
@@ -79,12 +78,15 @@ func (g *PermissionsGroupResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	diags = g.provider.syncPermissionsGroupWithApi(&state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
+	groupId := state.Id.ValueInt64()
+	group, err := g.provider.client.GetPermissionsGroup(groupId)
+	if err != nil {
+		diags = utils.HandleResourceReadError(ctx, "permissions group", groupId, err, resp)
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
+	mapPermissionsGroupToState(group, &state)
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -145,7 +147,7 @@ func (g *PermissionsGroupResource) Delete(ctx context.Context, req resource.Dele
 	err := g.provider.client.DeletePermissionsGroup(groupId)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error deleting permissions group",
+			fmt.Sprintf("Error deleting permissions group with ID %d", groupId),
 			fmt.Sprintf("Unexpected error occurred: %s", err.Error()),
 		)
 		return

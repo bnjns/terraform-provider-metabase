@@ -121,6 +121,13 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 }
 
 func (u *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	addUserReadError := func(userId int64, err error) {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Failed to get user with ID: %d", userId),
+			fmt.Sprintf("An unexpected error occurred: %s", err.Error()),
+		)
+	}
+
 	var state UserResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -128,12 +135,36 @@ func (u *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	diags = u.provider.syncUserWithApi(&state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+	userId := state.Id.ValueInt64()
+	user, err := u.provider.client.GetUser(userId)
+	if err != nil {
+		if err == client.ErrNotFound {
+			// If the user is not found, attempt to reactivate in case they were manually deactivated
+			err = u.provider.client.ReactivateUser(userId)
+
+			if err == nil {
+				// If no error when reactivating, then re-fetch the user and continue with the read
+				user, err = u.provider.client.GetUser(userId)
+				if err != nil {
+					addUserReadError(userId, err)
+					return
+				}
+			} else if err == client.ErrNotFound {
+				// If reactivating returns a not found error, then remove the resource
+				resp.State.RemoveResource(ctx)
+				return
+			} else {
+				// Fall back to reporting an error to the user
+				addUserReadError(userId, err)
+				return
+			}
+		} else {
+			addUserReadError(userId, err)
+			return
+		}
 	}
 
+	mapUserToState(user, &state)
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
