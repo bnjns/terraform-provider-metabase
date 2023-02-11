@@ -136,7 +136,7 @@ go generate
 Make sure you have [Metabase running](#running-metabase) and configured using the included script, as both the client
 and provider tests require an actual instance of Metabase to interact with.
 
-To run the unit tests for the client:
+To run the unit tests:
 
 ```sh
 $ go test -v ./...
