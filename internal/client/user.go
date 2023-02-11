@@ -127,7 +127,11 @@ func (c *Client) ReactivateUser(userId int64) error {
 	var resp User
 	err := c.doPut(fmt.Sprintf("/user/%d/reactivate", userId), nil, &resp)
 	if err != nil {
-		return nil
+		if err.Error() == "Not found." {
+			return ErrNotFound
+		} else {
+			return err
+		}
 	}
 
 	if !resp.IsActive {

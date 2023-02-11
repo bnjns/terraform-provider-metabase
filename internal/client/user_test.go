@@ -71,9 +71,27 @@ func TestClient_GetUser(t *testing.T) {
 
 	})
 	t.Run("requesting a user that doesn't exist should return an error", func(t *testing.T) {
-		user, err := client.GetUser(2)
+		user, err := client.GetUser(0)
 
 		assert.Nil(t, user)
+		assert.ErrorIs(t, err, ErrNotFound)
+	})
+}
+
+func TestClient_ReactivateUser(t *testing.T) {
+	t.Parallel()
+
+	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+
+	t.Run("reactivating a user that is active should return an error", func(t *testing.T) {
+		err := client.ReactivateUser(1)
+
+		assert.Contains(t, err.Error(), "Not able to reactivate an active user")
+	})
+
+	t.Run("reactivating a user that doesn't exist should return an error", func(t *testing.T) {
+		err := client.ReactivateUser(0)
+
 		assert.ErrorIs(t, err, ErrNotFound)
 	})
 }

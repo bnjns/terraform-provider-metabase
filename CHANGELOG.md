@@ -1,5 +1,10 @@
 ## 0.5.0 (Unreleased)
 
+BUG FIXES:
+
+* resource/metabase_user: Fix read behaviour to re-create when user is manually deactivated
+* resource/metabase_permissions_group: Fix read behaviour to re-create when group is manually deleted
+
 NOTES:
 
 * Upgraded the SDK to 1.x
