@@ -80,10 +80,10 @@ type Database struct {
 }
 
 type DatabaseRequest struct {
-	Engine      DatabaseEngine  `json:"engine"`
-	Name        string          `json:"name"`
-	Description *string         `json:"description"`
-	Details     DatabaseDetails `json:"details"`
+	Engine    DatabaseEngine               `json:"engine"`
+	Name      string                       `json:"name"`
+	Details   DatabaseDetails              `json:"details"`
+	Schedules *map[string]DatabaseSchedule `json:"schedules"`
 }
 
 func (c *Client) GetDatabase(databaseId int64) (*Database, error) {

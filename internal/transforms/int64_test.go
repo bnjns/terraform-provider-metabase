@@ -31,3 +31,38 @@ func TestFromTerraformInt64List(t *testing.T) {
 		assert.Equal(t, []int64{1, 5, 9}, *intList)
 	})
 }
+
+func TestToTerraformInt(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil", func(t *testing.T) {
+		tfInt := ToTerraformInt(nil)
+
+		assert.True(t, tfInt.IsNull())
+		assert.Zero(t, tfInt.ValueInt64())
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		num := int64(12)
+		tfInt := ToTerraformInt(&num)
+
+		assert.False(t, tfInt.IsNull())
+		assert.Equal(t, int64(12), tfInt.ValueInt64())
+	})
+}
+
+func TestFromTerraformInt(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil", func(t *testing.T) {
+		num := FromTerraformInt(types.Int64Null())
+
+		assert.Nil(t, num)
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		num := FromTerraformInt(types.Int64Value(12))
+
+		assert.Equal(t, int64(12), *num)
+	})
+}
