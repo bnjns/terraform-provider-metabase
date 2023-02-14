@@ -77,26 +77,11 @@ func (d *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	var state DatabaseModel
-	database, err := d.provider.client.GetDatabase(databaseId)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error creating database"),
-			fmt.Sprintf("An error occurred when fetching new database (ID: %d): %s", databaseId, err.Error()),
-		)
-		return
-	}
-
-	diags = mapDatabaseToState(ctx, database, &state)
+	state, diags := d.fetchDatabaseState(ctx, databaseId, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// Override both details and details_secure
-	// The API can return additional keys in details, and anything in details_secure is redacted so the response is useless
-	state.Details = plan.Details
-	state.DetailsSecure = plan.DetailsSecure
 
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
@@ -117,13 +102,41 @@ func (d *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resp.Diagnostics.Append(diags...)
 		return
 	}
-
 	diags = mapDatabaseToState(ctx, database, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (d *DatabaseResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	panic("update not implemented")
+	var plan DatabaseModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	databaseId := plan.Id.ValueInt64()
+	updateRequest, diags := plan.toRequest()
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := d.provider.client.UpdateDatabase(databaseId, *updateRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error updating database with ID %d", databaseId),
+			fmt.Sprintf("An unexpected error occurred: %s", err.Error()),
+		)
+		return
+	}
+
+	state, diags := d.fetchDatabaseState(ctx, databaseId, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	diags = resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (d *DatabaseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -196,6 +209,28 @@ func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) 
 		Name:    d.Name.ValueString(),
 		Details: detailsCombined,
 	}, nil
+}
+
+func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId int64, plan DatabaseModel) (DatabaseModel, diag.Diagnostics) {
+	database, err := d.provider.client.GetDatabase(databaseId)
+	if err != nil {
+		return DatabaseModel{}, diag.Diagnostics{
+			diag.NewErrorDiagnostic(
+				fmt.Sprintf("Error fetching database with ID: %d", databaseId),
+				fmt.Sprintf("An unexpected error occurred: %s", err.Error()),
+			),
+		}
+	}
+
+	var state DatabaseModel
+	diags := mapDatabaseToState(ctx, database, &state)
+
+	// Override both details and details_secure
+	// The API can return additional keys in details, and anything in details_secure is redacted so the response is useless
+	state.Details = plan.Details
+	state.DetailsSecure = plan.DetailsSecure
+
+	return state, diags
 }
 
 func mapDatabaseToState(ctx context.Context, database *client.Database, target *DatabaseModel) diag.Diagnostics {

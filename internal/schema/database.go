@@ -3,6 +3,10 @@ package schema
 import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	rSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-metabase/internal/validators"
@@ -25,12 +29,18 @@ func DatabaseResource() rSchema.Schema {
 			"id": rSchema.Int64Attribute{
 				Description: "The ID of the database.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"engine": rSchema.StringAttribute{
 				Description: "The engine type of the database.",
 				Required:    true,
 				Validators: []validator.String{
 					validators.IsKnownDatabaseEngineValidator(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": rSchema.StringAttribute{
@@ -41,6 +51,9 @@ func DatabaseResource() rSchema.Schema {
 				ElementType: types.StringType,
 				Description: "The features this database engine supports.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"details": rSchema.StringAttribute{
 				Description:         "Serialised JSON string containing the configuration options for the database engine. Use details_secure for any sensitive configuration details (eg, password).",

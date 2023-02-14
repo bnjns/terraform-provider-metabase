@@ -63,19 +63,19 @@ resource "metabase_database" "test" {
 			//	ImportState:       true,
 			//	ImportStateVerify: true,
 			//},
-			//			{
-			//				Config: providerConfig + `
-			//resource "metabase_database" "test" {
-			//	engine = "h2"
-			//	name   = "Test H2 (Updated)"
-			//
-			//	details = {
-			//		db = "zip:/app/metabase.jar!/sample-database.db;USER=GUEST;PASSWORD=guest"
-			//	}
-			//}
-			//`,
-			//				Check: resource.TestCheckResourceAttr("metabase_database.test", "name", "Test H2 (Updated)"),
-			//			},
+			{
+				Config: providerConfig + `
+resource "metabase_database" "test" {
+	engine = "h2"
+	name   = "Test H2 (Updated)"
+
+	details_secure = jsonencode({
+		db = "zip:/app/metabase.jar!/sample-database.db;USER=GUEST;PASSWORD=guest"
+	})
+}
+			`,
+				Check: resource.TestCheckResourceAttr("metabase_database.test", "name", "Test H2 (Updated)"),
+			},
 		},
 	})
 }
@@ -114,23 +114,25 @@ resource "metabase_database" "test" {
 			//				ImportState:       true,
 			//				ImportStateVerify: true,
 			//			},
-			//			{
-			//				Config: providerConfig + `
-			//resource "metabase_database" "test" {
-			//	engine = "postgres"
-			//	name   = "Test PostgreSQL (Updated)"
-			//
-			//	details = {
-			//		host     = "postgres"
-			//		port     = 5432
-			//		db       = "postgres"
-			//		username = "postgres"
-			//		password = "postgres"
-			//	}
-			//}
-			//`,
-			//				Check: resource.TestCheckResourceAttr("metabase_database.test", "name", "Test PostgreSQL (Updated)"),
-			//			},
+			{
+				Config: providerConfig + `
+resource "metabase_database" "test" {
+	engine = "postgres"
+	name   = "Test PostgreSQL (Updated)"
+
+	details = jsonencode({
+		host   = "postgres"
+		port   = 5432
+		dbname = "postgres"
+		user   = "postgres"
+	})
+	details_secure = jsonencode({
+		password = "postgres"
+	})
+}
+			`,
+				Check: resource.TestCheckResourceAttr("metabase_database.test", "name", "Test PostgreSQL (Updated)"),
+			},
 		},
 	})
 }
