@@ -81,17 +81,17 @@ resource "metabase_database" "example" {
 
 - `details` (String) Serialised JSON string containing the configuration options for the database engine. Use `details_secure` for any sensitive configuration details (eg, password).
 - `details_secure` (String, Sensitive) Serialised JSON string containing any sensitive configuration options for the database engine.
-- `schedules` (Map of Object) The schedules used to sync the database. (see [below for nested schema](#nestedatt--schedules))
 
 ### Read-Only
 
 - `features` (List of String) The features this database engine supports.
 - `id` (Number) The ID of the database.
+- `schedules` (Map of Object) The schedules used to sync the database. (see [below for nested schema](#nestedatt--schedules))
 
 <a id="nestedatt--schedules"></a>
 ### Nested Schema for `schedules`
 
-Optional:
+Read-Only:
 
 - `day` (String)
 - `frame` (String)

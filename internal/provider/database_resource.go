@@ -220,7 +220,6 @@ func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) 
 		return nil, diags
 	}
 
-	// TODO: add schedules to the request
 	return &client.DatabaseRequest{
 		Engine:  engine,
 		Name:    d.Name.ValueString(),

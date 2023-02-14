@@ -68,7 +68,6 @@ func DatabaseResource() rSchema.Schema {
 			"schedules": rSchema.MapAttribute{
 				ElementType: DatabaseScheduleType,
 				Description: "The schedules used to sync the database.",
-				Optional:    true,
 				Computed:    true,
 			},
 		},
