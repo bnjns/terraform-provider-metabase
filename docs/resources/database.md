@@ -24,13 +24,6 @@ resource "metabase_database" "example" {
   details = jsonencode({
     db = "zip:/app/metabase.jar!/sample-database.db;USER=GUEST;PASSWORD=guest"
   })
-
-  schedules = {
-    metadata_sync = {
-      type   = "hourly"
-      minute = 50
-    }
-  }
 }
 ```
 
@@ -57,10 +50,10 @@ resource "metabase_database" "example" {
   name   = "PostgreSQL database"
 
   details = jsonencode({
-    host     = "localhost"
-    port     = 5432
-    dbname   = "database"
-    username = "postgres"
+    host   = "localhost"
+    port   = 5432
+    dbname = "database"
+    user   = "username"
   })
   details_secure = jsonencode({
     password = "password"

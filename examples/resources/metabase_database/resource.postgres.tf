@@ -3,10 +3,10 @@ resource "metabase_database" "example" {
   name   = "PostgreSQL database"
 
   details = jsonencode({
-    host     = "localhost"
-    port     = 5432
-    dbname   = "database"
-    username = "postgres"
+    host   = "localhost"
+    port   = 5432
+    dbname = "database"
+    user   = "username"
   })
   details_secure = jsonencode({
     password = "password"
