@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+var ignoredDatabaseImportAttributes = []string{"details", "details_secure"}
+
 func TestCheckDatabaseDetails(t *testing.T) {
 	t.Parallel()
 
@@ -58,11 +60,12 @@ resource "metabase_database" "test" {
 					resource.TestCheckResourceAttrSet("metabase_database.test", "details_secure"),
 				),
 			},
-			//{
-			//	ResourceName:      "metabase_database.test",
-			//	ImportState:       true,
-			//	ImportStateVerify: true,
-			//},
+			{
+				ResourceName:            "metabase_database.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: ignoredDatabaseImportAttributes,
+			},
 			{
 				Config: providerConfig + `
 resource "metabase_database" "test" {
@@ -109,11 +112,12 @@ resource "metabase_database" "test" {
 					resource.TestCheckResourceAttrSet("metabase_database.test", "details_secure"),
 				),
 			},
-			//			{
-			//				ResourceName:      "metabase_database.test",
-			//				ImportState:       true,
-			//				ImportStateVerify: true,
-			//			},
+			{
+				ResourceName:            "metabase_database.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: ignoredDatabaseImportAttributes,
+			},
 			{
 				Config: providerConfig + `
 resource "metabase_database" "test" {

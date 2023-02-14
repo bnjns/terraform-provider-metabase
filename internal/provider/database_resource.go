@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
+	"strconv"
 	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
@@ -29,8 +30,7 @@ type DatabaseModel struct {
 
 // Ensure provider fully satisfies the framework interfaces
 var _ resource.Resource = &DatabaseResource{}
-
-//var _ resource.ResourceWithImportState = &DatabaseResource{}
+var _ resource.ResourceWithImportState = &DatabaseResource{}
 
 var (
 	errMissingConnString = errors.New("you must provide the connection string in the 'db' property")
@@ -156,6 +156,23 @@ func (d *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 		)
 		return
 	}
+}
+
+func (d *DatabaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	databaseId, _ := strconv.ParseInt(req.ID, 10, 64)
+
+	plan := DatabaseModel{
+		Details:       types.StringUnknown(),
+		DetailsSecure: types.StringUnknown(),
+	}
+	state, diags := d.fetchDatabaseState(ctx, databaseId, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) {
