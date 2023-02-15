@@ -96,6 +96,8 @@ Read-Only:
 
 You can import existing resources using the database ID:
 
-{{codefile "shell" "examples/resources/metabase_database/import.sh"}}
+```shell
+$ terraform import metabase_database.example 1
+```
 
 !> **Warning:** Sensitive details are redacted and so cannot be imported into state. Once the database has been imported, you will need to apply in order to sync the `details_secure` attribute.

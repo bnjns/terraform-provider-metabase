@@ -1,4 +1,9 @@
-## 0.6.0 (Unreleased)
+## 0.5.1 (Unreleased)
+
+NOTES:
+
+* Fixed documentation for `metabase_database`
+
 ## 0.5.0 (February 15, 2023)
 
 FEATURES

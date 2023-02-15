@@ -38,7 +38,7 @@ validate required attributes for known engines.
 {{ if .HasImport -}}
 You can import existing resources using the database ID:
 
-{{ printf "{{codefile \"shell\" %q}}" .ImportFile }}
+{{ codefile "shell" .ImportFile }}
 
 !> **Warning:** Sensitive details are redacted and so cannot be imported into state. Once the database has been imported, you will need to apply in order to sync the `details_secure` attribute.
 
