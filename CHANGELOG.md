@@ -1,5 +1,9 @@
 ## 0.5.0 (Unreleased)
 
+FEATURES
+
+* **New Resource:** `metabase_database`
+
 BUG FIXES:
 
 * resource/metabase_user: Fix read behaviour to re-create when user is manually deactivated

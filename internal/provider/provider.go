@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -44,8 +43,6 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 
 	var host string
 	if config.Host.IsNull() || config.Host.IsUnknown() {
-		test := os.Environ()
-		fmt.Print(test)
 		host = os.Getenv("METABASE_HOST")
 	} else {
 		host = config.Host.ValueString()
@@ -105,6 +102,9 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 
 func (p *MetabaseProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		func() resource.Resource {
+			return &DatabaseResource{provider: p}
+		},
 		func() resource.Resource {
 			return &PermissionsGroupResource{provider: p}
 		},

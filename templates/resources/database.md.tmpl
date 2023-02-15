@@ -1,0 +1,47 @@
+---
+page_title: "{{ .Type }}: {{ .Name }}"
+subcategory: "Databases"
+description: |-
+    {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{ .Type }}: {{ .Name }}
+
+Metabase supports [many database engines](https://www.metabase.com/learn/databases/types-of-databases); each engine
+requires its own configuration which should be provided as json-encoded string in the `details` or `details_secure`
+attributes. While this provider should allow you to use any engine officially supported by Metabase, it does attempt to
+validate required attributes for known engines.
+
+!> **Warning:** It is not recommended that you hardcode any settings you include in the `details_secure` attribute, as this risks secret leakage.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+## Supported Engines
+
+### H2
+
+{{ tffile "examples/resources/metabase_database/resource.h2.tf" }}
+
+### PostgreSQL
+
+{{ tffile "examples/resources/metabase_database/resource.postgres.tf" }}
+
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ if .HasImport -}}
+You can import existing resources using the database ID:
+
+{{ printf "{{codefile \"shell\" %q}}" .ImportFile }}
+
+!> **Warning:** Sensitive details are redacted and so cannot be imported into state. Once the database has been imported, you will need to apply in order to sync the `details_secure` attribute.
+
+{{- else }}
+This resource does not support importing.
+{{- end }}
