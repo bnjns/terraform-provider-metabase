@@ -2,14 +2,12 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/exp/slices"
 	"strconv"
 	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
@@ -180,8 +178,8 @@ func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) 
 	var diags diag.Diagnostics
 
 	// Map the JSON-encoded details string into a map
-	details, errDetails := unmarshallConfig(d.Details)
-	detailsSecure, errDetailsSecure := unmarshallConfig(d.DetailsSecure)
+	details, errDetails := utils.UnmarshallJson(d.Details)
+	detailsSecure, errDetailsSecure := utils.UnmarshallJson(d.DetailsSecure)
 
 	if errDetails != nil {
 		diags.AddError(
@@ -256,64 +254,13 @@ func mapDatabaseToState(ctx context.Context, database *client.Database, target *
 	target.Engine = types.StringValue(database.Engine)
 	target.Name = types.StringValue(database.Name)
 	target.Features, _ = types.ListValueFrom(ctx, types.StringType, database.Features)
-
-	details, detailsSecure, detailsDiags := splitDatabaseDetails(database)
-	target.Details = details
-	target.DetailsSecure = detailsSecure
-	diags.Append(detailsDiags...)
-	if diags.HasError() {
-		return diags
-	}
+	target.Details = types.StringUnknown()
+	target.DetailsSecure = types.StringUnknown()
 
 	schedules, scheduleDiags := buildSchedules(database)
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 	return diags
-}
-
-// TODO: unit test this
-func splitDatabaseDetails(database *client.Database) (types.String, types.String, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	if database.Details == nil {
-		return types.StringNull(), types.StringNull(), diags
-	}
-
-	details := make(map[string]interface{})
-	detailsSecure := make(map[string]interface{})
-	for k, v := range *database.Details {
-		if isSensitiveDetail(k) {
-			detailsSecure[k] = v
-		} else {
-			details[k] = v
-		}
-	}
-
-	detailsStr, errDetails := json.Marshal(details)
-	detailsSecureStr, errDetailsSecure := json.Marshal(detailsSecure)
-
-	if errDetails != nil {
-		diags.AddError(
-			fmt.Sprintf("Error processing database: %d", database.Id),
-			fmt.Sprintf("Error occurred when converting details to JSON string: %e", errDetails),
-		)
-	}
-	if errDetailsSecure != nil {
-		diags.AddError(
-			fmt.Sprintf("Error processing database: %d", database.Id),
-			fmt.Sprintf("Error occurred when converting details_secure to JSON string: %e", errDetailsSecure),
-		)
-	}
-	if diags.HasError() {
-		return types.StringNull(), types.StringNull(), diags
-	}
-
-	return types.StringValue(string(detailsStr)), types.StringValue(string(detailsSecureStr)), diag.Diagnostics{}
-
-}
-
-func isSensitiveDetail(key string) bool {
-	return slices.Contains(databaseSensitiveProperties, key)
 }
 
 // TODO: unit test this
@@ -356,19 +303,4 @@ func checkDatabaseDetails(engine client.DatabaseEngine, details map[string]inter
 	}
 
 	return errs
-}
-
-// TODO: move this to a utility?
-func unmarshallConfig(config types.String) (map[string]interface{}, error) {
-	if config.IsNull() {
-		return nil, nil
-	} else {
-		configUnmarshalled := make(map[string]interface{})
-		err := json.Unmarshal([]byte(config.ValueString()), &configUnmarshalled)
-		if err != nil {
-			return nil, fmt.Errorf("error processing database configuration: %e", err)
-		}
-
-		return configUnmarshalled, nil
-	}
 }
