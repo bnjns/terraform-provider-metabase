@@ -37,6 +37,53 @@ func TestCheckDatabaseDetails(t *testing.T) {
 	}
 }
 
+func TestBuildSchedules(t *testing.T) {
+	t.Parallel()
+
+	t.Run("a database with no schedules should return a non-null empty map", func(t *testing.T) {
+		database := client.Database{
+			Schedules: nil,
+		}
+
+		schedules, diags := buildSchedules(&database)
+		assert.Zero(t, len(diags))
+		assert.False(t, schedules.IsNull())
+		assert.False(t, schedules.IsUnknown())
+		assert.Zero(t, len(schedules.Elements()))
+	})
+
+	t.Run("a database with valid schedules should return a non-empty map", func(t *testing.T) {
+		hour := int64(1)
+		minuteOnHour := int64(0)
+		minuteEvery := int64(1)
+		database := client.Database{
+			Schedules: &map[string]client.DatabaseSchedule{
+				"example": {
+					Day:    nil,
+					Frame:  nil,
+					Hour:   &hour,
+					Minute: &minuteOnHour,
+					Type:   "daily",
+				},
+				"another": {
+					Day:    nil,
+					Frame:  nil,
+					Hour:   nil,
+					Minute: &minuteEvery,
+					Type:   "hourly",
+				},
+			},
+		}
+
+		schedules, diags := buildSchedules(&database)
+		assert.Zero(t, len(diags))
+		assert.False(t, schedules.IsNull())
+		assert.False(t, schedules.IsUnknown())
+
+		assert.Equal(t, 2, len(schedules.Elements()))
+	})
+}
+
 func TestAccDatabaseResource_H2(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

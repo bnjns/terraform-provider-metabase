@@ -263,7 +263,6 @@ func mapDatabaseToState(ctx context.Context, database *client.Database, target *
 	return diags
 }
 
-// TODO: unit test this
 func buildSchedules(database *client.Database) (types.Map, diag.Diagnostics) {
 	if database.Schedules == nil {
 		return types.MapValue(schema.DatabaseScheduleType, map[string]attr.Value{})
