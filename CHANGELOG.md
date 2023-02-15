@@ -1,4 +1,5 @@
-## 0.5.0 (Unreleased)
+## 0.6.0 (Unreleased)
+## 0.5.0 (February 15, 2023)
 
 FEATURES
 
