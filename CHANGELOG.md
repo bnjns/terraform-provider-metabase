@@ -1,4 +1,9 @@
 ## 0.6.0 (Unreleased)
+
+FEATURES
+
+* **New Data Source:** `metabase_database`
+
 ## 0.5.1 (February 15, 2023)
 
 NOTES:

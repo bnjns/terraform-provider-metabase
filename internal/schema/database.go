@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
@@ -66,6 +67,40 @@ func DatabaseResource() rSchema.Schema {
 				Sensitive:   true,
 			},
 			"schedules": rSchema.MapAttribute{
+				ElementType: DatabaseScheduleType,
+				Description: "The schedules used to sync the database.",
+				Computed:    true,
+			},
+		},
+	}
+}
+
+func DatabaseDataSource() dSchema.Schema {
+	return dSchema.Schema{
+		Description: "Gets the details of the provided database.",
+		Attributes: map[string]dSchema.Attribute{
+			"id": dSchema.Int64Attribute{
+				Description: "The ID of the database.",
+				Required:    true,
+			},
+			"engine": dSchema.StringAttribute{
+				Description: "The engine type of the database.",
+				Computed:    true,
+			},
+			"name": dSchema.StringAttribute{
+				Description: "The name of the database.",
+				Computed:    true,
+			},
+			"features": dSchema.ListAttribute{
+				ElementType: types.StringType,
+				Description: "The features this database engine supports.",
+				Computed:    true,
+			},
+			"details": dSchema.StringAttribute{
+				Description: "Serialised JSON string containing the configuration options for the database. This will not contain any sensitive/redacted properties.",
+				Computed:    true,
+			},
+			"schedules": dSchema.MapAttribute{
 				ElementType: DatabaseScheduleType,
 				Description: "The schedules used to sync the database.",
 				Computed:    true,
