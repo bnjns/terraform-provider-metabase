@@ -83,24 +83,24 @@ func DatabaseDataSource() dSchema.Schema {
 				Description: "The ID of the database.",
 				Required:    true,
 			},
-			"engine": rSchema.StringAttribute{
+			"engine": dSchema.StringAttribute{
 				Description: "The engine type of the database.",
 				Computed:    true,
 			},
-			"name": rSchema.StringAttribute{
+			"name": dSchema.StringAttribute{
 				Description: "The name of the database.",
 				Computed:    true,
 			},
-			"features": rSchema.ListAttribute{
+			"features": dSchema.ListAttribute{
 				ElementType: types.StringType,
 				Description: "The features this database engine supports.",
 				Computed:    true,
 			},
-			"details": rSchema.StringAttribute{
+			"details": dSchema.StringAttribute{
 				Description: "Serialised JSON string containing the configuration options for the database. This will not contain any sensitive/redacted properties.",
 				Computed:    true,
 			},
-			"schedules": rSchema.MapAttribute{
+			"schedules": dSchema.MapAttribute{
 				ElementType: DatabaseScheduleType,
 				Description: "The schedules used to sync the database.",
 				Computed:    true,
