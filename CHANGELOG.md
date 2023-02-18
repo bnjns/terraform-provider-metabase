@@ -1,62 +1,67 @@
-## 0.7.0 (Unreleased)
-## 0.6.0 (February 17, 2023)
+# Changelog
 
-FEATURES
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.6.0] - 2023-02-17
+
+### Added
 
 * **New Data Source:** `metabase_database`
 
-## 0.5.1 (February 15, 2023)
+## [0.5.1] - 2023-02-15
 
-NOTES:
+### Fixed
 
 * Fixed documentation for `metabase_database`
 
-## 0.5.0 (February 15, 2023)
+## [0.5.0] - 2023-02-15
 
-FEATURES
+### Added
 
 * **New Resource:** `metabase_database`
 
-BUG FIXES:
+### Fixed
 
-* resource/metabase_user: Fix read behaviour to re-create when user is manually deactivated
-* resource/metabase_permissions_group: Fix read behaviour to re-create when group is manually deleted
+* `resource/metabase_user`: Fix read behaviour to re-create when user is manually deactivated
+* `resource/metabase_permissions_group`: Fix read behaviour to re-create when group is manually deleted
 
-NOTES:
+### Changed
 
 * Upgraded the SDK to 1.x
 * Moved schema definitions to their own package
 
-## 0.4.0 (October 15, 2022)
+## [0.4.0] - 2022-10-15
 
-FEATURES
+### Added
 
 * **New Resource:** `metabase_permissions_group`
 * **New Data Source:** `metabase_permissions_group`
 
-## 0.3.0 (October 11, 2022)
+## [0.3.0] - 2022-10-11
 
-BUG FIXES:
+### Fixed
 
-* resource/metabase_user: Use `nil` for user group memberships instead of an empty array to fix issue with creating users with 0.44 
+* `resource/metabase_user`: Use `nil` for user group memberships instead of an empty array to fix issue with creating users with 0.44 
 
-NOTES:
+### Changed
 
 * Upgraded the SDK to 0.14
 
-## 0.2.0 (August 19, 2022)
+## [0.2.0] - 2022-08-19
 
-FEATURES
+### Added
 
 * **New Resource:** `metabase_user`
 
-NOTES:
+### Changed
 
 * Upgraded the SDK to 0.11
 
-## 0.1.0 (August  8, 2022)
+## [0.1.0] - 2022-08-08
 
-FEATURES:
+### Added
 
 * **New Data Source:** `metabase_current_user`
 * **New Data Source:** `metabase_user`
