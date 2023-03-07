@@ -1,6 +1,7 @@
 package transforms
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 )
@@ -16,6 +17,20 @@ func FromTerraformInt64List(l types.List) *[]int64 {
 		}
 
 		return &newList
+	}
+}
+
+func ToTerraformInt64List(intList *[]int64) types.List {
+	if intList == nil {
+		return types.ListNull(types.Int64Type)
+	} else {
+		attrList := make([]attr.Value, len(*intList))
+		for i, val := range *intList {
+			attrList[i] = types.Int64Value(val)
+		}
+
+		newList, _ := types.ListValue(types.Int64Type, attrList)
+		return newList
 	}
 }
 
