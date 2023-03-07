@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -271,14 +270,43 @@ func (u *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	resp.Diagnostics.Append(diags...)
 }
 
-func mapUserToState(user *client.User, target *UserResourceModel) {
-	groupIds := make([]attr.Value, 0)
-	for _, membership := range user.GroupMemberships {
-		// We need to remove the restricted groups from state so they don't conflict
-		if !slices.Contains(validators.ReservedGroupIds, membership.Id) {
-			groupIds = append(groupIds, types.Int64Value(membership.Id))
+func buildGroupIdList(user *client.User, state *UserResourceModel) []int64 {
+	var isReservedGroup = func(groupId int64) bool {
+		return slices.Contains(validators.ReservedGroupIds, groupId)
+	}
+
+	groupIds := make([]int64, 0)
+
+	// Convert the group memberships from the API into a list of IDs
+	apiGroupIds := make([]int64, len(user.GroupMemberships))
+	for i, membership := range user.GroupMemberships {
+		apiGroupIds[i] = membership.Id
+	}
+
+	// If the target (aka the current state) has the group IDs set, then use this to initialise the group IDs.
+	// This will ensure that we retain the ordering.
+	if !state.GroupIds.IsUnknown() && !state.GroupIds.IsNull() {
+		for _, groupIdEl := range state.GroupIds.Elements() {
+			groupId := groupIdEl.(types.Int64).ValueInt64()
+			// Only add this group from state if it's also in the API response and isn't reserved
+			if slices.Contains(apiGroupIds, groupId) && !isReservedGroup(groupId) {
+				groupIds = append(groupIds, groupId)
+			}
 		}
 	}
+
+	// Now iterate through the group IDs from the API and add any that are missing
+	for _, groupId := range apiGroupIds {
+		if !slices.Contains(groupIds, groupId) && !isReservedGroup(groupId) {
+			groupIds = append(groupIds, groupId)
+		}
+	}
+
+	return groupIds
+}
+
+func mapUserToState(user *client.User, target *UserResourceModel) {
+	groupIds := buildGroupIdList(user, target)
 
 	target.Id = types.Int64Value(user.Id)
 	target.Email = types.StringValue(user.Email)
@@ -286,7 +314,7 @@ func mapUserToState(user *client.User, target *UserResourceModel) {
 	target.LastName = transforms.ToTerraformString(user.LastName)
 	target.CommonName = transforms.ToTerraformString(user.CommonName)
 	target.Locale = transforms.ToTerraformString(user.Locale)
-	target.GroupIds, _ = types.ListValue(types.Int64Type, groupIds)
+	target.GroupIds = transforms.ToTerraformInt64List(&groupIds)
 	target.GoogleAuth = types.BoolValue(user.GoogleAuth)
 	target.LdapAuth = types.BoolValue(user.LdapAuth)
 	target.IsActive = types.BoolValue(user.IsActive)
