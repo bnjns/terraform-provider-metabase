@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.1] - 2023-03-07
+
+### Fixed
+
+- `resource/metabase_user`: Fix an issue where an ordering mismatch between the API and state for the groups shows a perpetual diff
+
 ## [0.6.0] - 2023-02-17
 
 ### Added
