@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.2] - 2023-03-08
+
+### Fixed
+
+- Republished v0.6.1 to fix issue with SHASUM mismatch
+
 ## [0.6.1] - 2023-03-07
 
 ### Fixed
