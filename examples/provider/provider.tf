@@ -9,4 +9,9 @@ terraform {
 
 provider "metabase" {
   host = "<your metabase host/ip>"
+
+  # Optionally configure headers to set on each request
+  headers = {
+    Authorizer = "Bearer: ${var.id_token}"
+  }
 }
