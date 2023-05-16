@@ -80,6 +80,7 @@ provider "metabase" {
 
 ### Optional
 
+- `headers` (Map of String, Sensitive) Optional headers to attach to every request to Metabase.
 - `host` (String) The Host URL of the Metabase instance to manage. Can also be set with the METABASE_HOST environment variable.
 - `password` (String, Sensitive) The password of the super user to use when interacting with Metabase. Can also be set with the METABASE_PASSWORD environment variable.
 - `username` (String) The username of the super user to use when interacting with Metabase. Can also be set with the METABASE_USERNAME environment variable.
