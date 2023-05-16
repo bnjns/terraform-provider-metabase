@@ -26,6 +26,7 @@ type MetabaseProviderModel struct {
 	Host     types.String `tfsdk:"host"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
+	Headers  types.Map    `tfsdk:"headers"`
 }
 
 func (p *MetabaseProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -83,11 +84,16 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 		)
 	}
 
+	headers := make(map[string]string)
+	if !config.Headers.IsNull() {
+		config.Headers.ElementsAs(ctx, &headers, true)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	c, err := client.NewClient(host, username, password)
+	c, err := client.NewClient(host, username, password, headers)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
@@ -144,6 +150,12 @@ func (p *MetabaseProvider) Schema(ctx context.Context, req provider.SchemaReques
 			},
 			"password": schema.StringAttribute{
 				Description: "The password of the super user to use when interacting with Metabase. Can also be set with the METABASE_PASSWORD environment variable.",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"headers": schema.MapAttribute{
+				ElementType: types.StringType,
+				Description: "Optional headers to attach to every request to Metabase.",
 				Optional:    true,
 				Sensitive:   true,
 			},
