@@ -6,7 +6,7 @@ import (
 )
 
 func TestClient_GetDatabase(t *testing.T) {
-	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+	client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 
 	t.Run("requesting a database that exists should return that database", func(t *testing.T) {
 		database, err := client.GetDatabase(1)
@@ -24,7 +24,7 @@ func TestClient_GetDatabase(t *testing.T) {
 }
 
 func TestClient_Database_H2(t *testing.T) {
-	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+	client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 
 	t.Run("creating a database with the DB string missing should return an error", func(t *testing.T) {
 		databaseId, err := client.CreateDatabase(DatabaseRequest{

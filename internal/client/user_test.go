@@ -9,7 +9,7 @@ func TestClient_GetCurrentUser(t *testing.T) {
 	t.Parallel()
 
 	t.Run("retrieving the current user should deserialise correctly", func(t *testing.T) {
-		client, _ := NewClient(testServerUrl, testUsername, testPassword)
+		client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 		user, err := client.GetCurrentUser()
 
 		expectedGroupMemberships := []GroupMembership{
@@ -42,7 +42,7 @@ func TestClient_GetCurrentUser(t *testing.T) {
 func TestClient_GetUser(t *testing.T) {
 	t.Parallel()
 
-	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+	client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 
 	t.Run("requesting a user that exists should return that user", func(t *testing.T) {
 		user, err := client.GetUser(1)
@@ -81,7 +81,7 @@ func TestClient_GetUser(t *testing.T) {
 func TestClient_ReactivateUser(t *testing.T) {
 	t.Parallel()
 
-	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+	client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 
 	t.Run("reactivating a user that is active shouldn't return an error", func(t *testing.T) {
 		err := client.ReactivateUser(1)

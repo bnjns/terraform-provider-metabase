@@ -7,7 +7,7 @@ import (
 )
 
 func TestClient_PermissionsGroup(t *testing.T) {
-	client, _ := NewClient(testServerUrl, testUsername, testPassword)
+	client, _ := NewClient(testServerUrl, testUsername, testPassword, testHeaders)
 
 	newGroupName := acctest.RandString(10)
 	updatedGroupName := acctest.RandString(11)

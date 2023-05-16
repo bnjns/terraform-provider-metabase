@@ -19,6 +19,7 @@ type Client struct {
 	HttpClient *http.Client
 
 	Auth      AuthDetails
+	Headers   map[string]string
 	SessionId string
 }
 
@@ -35,7 +36,7 @@ type SuccessResponse struct {
 
 var ErrNotFound = errors.New("not found")
 
-func NewClient(host string, username string, password string) (*Client, error) {
+func NewClient(host string, username string, password string, headers map[string]string) (*Client, error) {
 	if host == "" {
 		return nil, fmt.Errorf("must provide a valid host URL")
 	}
@@ -55,6 +56,7 @@ func NewClient(host string, username string, password string) (*Client, error) {
 			Username: username,
 			Password: password,
 		},
+		Headers: headers,
 	}
 
 	err := c.signIn()
@@ -66,6 +68,10 @@ func NewClient(host string, username string, password string) (*Client, error) {
 }
 
 func (c *Client) doRequest(req *http.Request, response interface{}) (statusCode int, err error) {
+	for k, v := range c.Headers {
+		req.Header.Set(k, v)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	if c.SessionId != "" {

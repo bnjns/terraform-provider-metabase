@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2023-05-16
+
+### Added
+
+- Added the ability to set custom headers on every request to Metabase (#44)
+
 ## [0.6.2] - 2023-03-08
 
 ### Fixed
