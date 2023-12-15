@@ -44,7 +44,7 @@ jobs:
         run: |
           go test ./... \
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: tests
           path: tests/
@@ -89,7 +89,7 @@ jobs:
           go test -v ./... -run "^TestAcc" \
             -coverprofile=tests/coverage-acc.out -json | tee tests/report-acc.json
         timeout-minutes: 10
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: tests
           path: tests/
