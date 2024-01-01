@@ -46,7 +46,7 @@ jobs:
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
       - uses: actions/upload-artifact@v4
         with:
-          name: tests
+          name: tests-unit
           path: tests/
 
   acceptance:
@@ -91,7 +91,7 @@ jobs:
         timeout-minutes: 10
       - uses: actions/upload-artifact@v4
         with:
-          name: tests
+          name: tests-acc-${{ matrix.terraform }}
           path: tests/
 
   sonarcloud:
