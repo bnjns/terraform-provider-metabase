@@ -17,20 +17,3 @@ jobs:
     with:
       release-notes: false
       setup-go-version: '1.18.x'
-  update-release-notes:
-    needs: [ terraform-provider-release ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install keepachangelog
-        run: pip install keepachangelog==2.0.0.dev5
-      - name: Update release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          version=${GITHUB_REF_NAME:1}
-          release_notes=$(python -m keepachangelog show $version CHANGELOG.md)
-          gh release edit $GITHUB_REF_NAME --notes "$release_notes"
