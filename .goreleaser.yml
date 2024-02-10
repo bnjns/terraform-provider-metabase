@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 before:
   hooks:
     - go mod tidy
@@ -46,3 +47,28 @@ release:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
+
+changelog:
+  use: github
+  sort: asc
+  abbrev: -1
+  filters:
+    exclude:
+      - '^.*?chore(\([\w-]+\))??!?:.+$'
+      - '^.*?ci(\([\w-]+\))??!?:.+$'
+      - typo
+  groups:
+    - title: 🎉 Features
+      regexp: '^.*?feat(\(\w]+\))??!?:.+$'
+      order: 0
+    - title: 🐛 Bug fixes
+      regexp: '^.*?(bug|fix)(\([\w]+\))??!?:.+$'
+      order: 1
+    - title: 📄 Documentation
+      regexp: '^.*?docs?(\([\w]+\))??!?:.+$'
+      order: 2
+    - title: 👒 Dependencies
+      regexp: '^.*?build(\([\w-]+\))??!?:.+$'
+      order: 3
+    - title: Other
+      order: 999
