@@ -11,6 +11,10 @@
 A Terraform provider that lets you manage your Metabase instance, because why not Terraform the world?
 </div>
 
+> ⚠️ This provider is not abandoned, but I changed job and no longer use this provider on a day-to-day basis so feature
+> development will be slow. If you have a feature request please do raise an issue and I will be more than happy to take
+> a look at it! 
+
 ## 🧐 About
 
 [Metabase](https://www.metabase.com/) is a simple analytics tool which allows anyone to easily learn and make decisions
@@ -21,14 +25,36 @@ As with everything, software engineers are incredibly lazy and like to avoid con
 provider lets you manage your Metabase instance using Terraform and any standard infrastructure-as-code tooling and
 processes you may already have.
 
-⚠️ This provider is still a work-in-progress and not all features are available. See the v1 project for details.
+## 🎈 Usage
 
-## 🏁 Getting Started
+This provider is published to the public Terraform
+Registry: <https://registry.terraform.io/providers/bnjns/metabase/latest>. To use the provider, simply add it to your
+Terraform `required_providers` block and configure the provider:
+
+```hcl
+terraform {
+  required_providers {
+    metabase = {
+      source  = "bnjns/metabase"
+      version = "~> 0.0"
+    }
+  }
+}
+
+provider "metabase" {
+  host = "<your metabase host/ip>"
+}
+```
+
+See [the documentation](https://registry.terraform.io/providers/bnjns/metabase/latest/docs) on the Terraform registry
+for more details.
+
+## 🏁 Contributing
 
 ### Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.17
+- [Go](https://golang.org/doc/install) 1.20
 
 For local development, you may also want one of:
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
@@ -47,8 +73,6 @@ Install the Go dependencies:
 ```sh
 $ go mod download
 ```
-
-## 🎈 Usage
 
 ### Building the provider
 
@@ -115,7 +139,7 @@ This will start Metabase on port 3000.
 #### Setting up Metabase
 
 When Metabase first starts, it will require some basic initial set up before it can be used. You can set it up manually
-by visiting <https://localhost:3000> and following the steps or using the included script:
+by visiting <https://localhost:3000> and following the steps, or by running the included script:
 
 ```sh
 $ scripts/setup_metabase.sh
