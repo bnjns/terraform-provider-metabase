@@ -6,13 +6,11 @@ on:
       - main
     paths-ignore:
       - 'readme.md'
-      - 'CHANGELOG.md'
   push:
     branches:
       - main
     paths-ignore:
       - 'readme.md'
-      - 'CHANGELOG.md'
 
 permissions:
   contents: read
