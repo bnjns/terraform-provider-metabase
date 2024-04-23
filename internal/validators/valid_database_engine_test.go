@@ -41,7 +41,7 @@ func TestIsKnownDatabaseEngineValidator(t *testing.T) {
 	t.Run("a valid engine should pass", func(t *testing.T) {
 		request := validator.StringRequest{
 			Path:        path.Empty(),
-			ConfigValue: types.StringValue("h2"),
+			ConfigValue: types.StringValue("postgres"),
 		}
 		response := validator.StringResponse{}
 

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"terraform-provider-metabase/internal/client"
+	"strings"
 )
 
 func HandleResourceReadError(ctx context.Context, resourceName string, resourceId int64, err error, response *resource.ReadResponse) diag.Diagnostics {
-	if err == client.ErrNotFound {
+	if strings.Contains(err.Error(), "not found") {
 		response.State.RemoveResource(ctx)
 		return diag.Diagnostics{}
 	} else {

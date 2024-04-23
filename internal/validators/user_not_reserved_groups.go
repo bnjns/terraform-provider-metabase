@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/permissions"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -10,12 +11,7 @@ import (
 	"strconv"
 )
 
-const (
-	GroupIdAllUsers       = 1
-	GroupIdAdministrators = 2
-)
-
-var ReservedGroupIds = []int64{GroupIdAllUsers, GroupIdAdministrators}
+var ReservedGroupIds = []int64{permissions.GroupAllUsers, permissions.GroupAdministrators}
 
 type userNotInReservedGroupsValidator struct {
 	validator.String

@@ -3,12 +3,28 @@ package validators
 import (
 	"context"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
-	"terraform-provider-metabase/internal/client"
 )
+
+var databaseAllowedEngines = []database.Engine{
+	database.EngineAmazonAthena,
+	database.EngineAmazonRedshift,
+	database.EngineBigQuery,
+	database.EngineDruid,
+	database.EngineGoogleAnalytics,
+	database.EngineMongoDB,
+	database.EngineMySQL,
+	database.EnginePostgres,
+	database.EnginePresto,
+	database.EngineSnowflake,
+	database.EngineSparkSQL,
+	database.EngineSQLServer,
+	database.EngineSQLite,
+}
 
 type isKnownDatabaseEngineValidator struct {
 	validator.String
@@ -38,13 +54,13 @@ func (v isKnownDatabaseEngineValidator) ValidateString(ctx context.Context, requ
 		return
 	}
 
-	dbEngine := client.DatabaseEngine(engine.ValueString())
+	dbEngine := database.Engine(engine.ValueString())
 
-	if !slices.Contains(client.DatabaseAllowedEngines, dbEngine) {
+	if !slices.Contains(databaseAllowedEngines, dbEngine) {
 		response.Diagnostics.AddAttributeWarning(
 			request.Path,
 			"Not a recognised database engine",
-			fmt.Sprintf("Database engine '%s' is not a recognised type: %s. Applying is still possible, but the provider will not be able to validate the configuration.", engine.ValueString(), client.DatabaseAllowedEngines),
+			fmt.Sprintf("Database engine '%s' is not a recognised type: %s. Applying is still possible, but the provider will not be able to validate the configuration.", engine.ValueString(), databaseAllowedEngines),
 		)
 	}
 }

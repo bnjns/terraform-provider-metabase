@@ -161,10 +161,8 @@ func testAccCheckUserConf(resourceName string, email string, firstName string, l
 		resource.TestCheckResourceAttr(resourceName, "group_ids.#", "0"),
 
 		resource.TestCheckResourceAttrSet(resourceName, "google_auth"),
-		resource.TestCheckResourceAttrSet(resourceName, "ldap_auth"),
 
 		resource.TestCheckResourceAttr(resourceName, "is_active", "true"),
-		resource.TestCheckResourceAttrSet(resourceName, "is_installer"),
 		resource.TestCheckResourceAttrSet(resourceName, "is_qbnewb"),
 		resource.TestCheckResourceAttr(resourceName, "is_superuser", fmt.Sprintf("%t", isSuperuser)),
 		resource.TestCheckResourceAttrSet(resourceName, "has_invited_second_user"),

@@ -80,9 +80,9 @@ func TestDatabaseResource(t *testing.T) {
 		})
 
 		t.Run("schedules should be configured", func(t *testing.T) {
-			assert.IsType(t, rSchema.MapAttribute{}, resourceSchema.Attributes["schedules"])
+			assert.IsType(t, rSchema.ObjectAttribute{}, resourceSchema.Attributes["schedules"])
 
-			schedules := resourceSchema.Attributes["schedules"].(rSchema.MapAttribute)
+			schedules := resourceSchema.Attributes["schedules"].(rSchema.ObjectAttribute)
 			assert.NotEmpty(t, schedules.Description)
 			assert.True(t, schedules.IsComputed())
 			assert.False(t, schedules.IsRequired())
@@ -141,9 +141,9 @@ func TestDatabaseDataSource(t *testing.T) {
 		})
 
 		t.Run("schedules should be configured", func(t *testing.T) {
-			assert.IsType(t, dSchema.MapAttribute{}, dataSourceSchema.Attributes["schedules"])
+			assert.IsType(t, dSchema.ObjectAttribute{}, dataSourceSchema.Attributes["schedules"])
 
-			schedules := dataSourceSchema.Attributes["schedules"].(dSchema.MapAttribute)
+			schedules := dataSourceSchema.Attributes["schedules"].(dSchema.ObjectAttribute)
 			assert.NotEmpty(t, schedules.Description)
 			assert.True(t, schedules.IsComputed())
 		})

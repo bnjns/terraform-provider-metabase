@@ -2,22 +2,21 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/bnjns/metabase-sdk-go/metabase"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"os"
-
-	"terraform-provider-metabase/internal/client"
-
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"os"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
 var _ provider.Provider = &MetabaseProvider{}
 
 type MetabaseProvider struct {
-	client     *client.Client
+	client     *metabase.Client
 	configured bool
 	version    string
 }
@@ -93,16 +92,24 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
-	c, err := client.NewClient(host, username, password, headers)
+	metabaseAuth, err := metabase.NewSessionAuthenticator(username, password)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
-			"An error occurred when creating the client:"+err.Error(),
+			fmt.Sprintf("An error occurred when configuring the authentication: %s", err.Error()),
+		)
+		return
+	}
+	client, err := metabase.NewClient(host, metabaseAuth, metabase.WithHeaders(headers))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create client",
+			fmt.Sprintf("An error occurred when creating the client: %s", err.Error()),
 		)
 		return
 	}
 
-	p.client = c
+	p.client = client
 	p.configured = true
 }
 

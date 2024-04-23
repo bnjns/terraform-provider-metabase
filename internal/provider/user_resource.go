@@ -3,12 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/permissions"
+	"github.com/bnjns/metabase-sdk-go/service/user"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
 	"strconv"
-	"terraform-provider-metabase/internal/client"
+	"strings"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
 	"terraform-provider-metabase/internal/validators"
@@ -65,16 +67,14 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	groupIds := addReservedUserGroups(plan)
-	groupMemberships := mapToGroupMemberships(groupIds)
-	var createReq = client.CreateUserRequest{
+	groupMemberships := mapToGroupMemberships(transforms.FromTerraformInt64List(plan.GroupIds))
+
+	userId, err := u.provider.client.User.Create(ctx, &user.CreateRequest{
 		Email:            plan.Email.ValueString(),
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
 		LastName:         transforms.FromTerraformString(plan.LastName),
 		GroupMemberships: groupMemberships,
-	}
-
-	userId, err := u.provider.client.CreateUser(createReq)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating user",
@@ -85,15 +85,13 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// If the `is_superuser` attribute is set to true we need to update the user
 	if !plan.IsSuperuser.IsNull() && !plan.IsSuperuser.IsUnknown() && plan.IsSuperuser.ValueBool() {
-		updateReq := client.UpdateUserRequest{
+		err := u.provider.client.User.Update(ctx, userId, &user.UpdateRequest{
 			Email:            transforms.FromTerraformString(plan.Email),
 			FirstName:        transforms.FromTerraformString(plan.FirstName),
 			LastName:         transforms.FromTerraformString(plan.LastName),
-			GroupMemberships: groupMemberships,
 			IsSuperuser:      transforms.FromTerraformBool(plan.IsSuperuser),
-			Locale:           transforms.FromTerraformString(plan.Locale),
-		}
-		err := u.provider.client.UpdateUser(userId, updateReq)
+			GroupMemberships: groupMemberships,
+		})
 		if err != nil {
 			resp.Diagnostics.AddWarning(
 				"User partially created",
@@ -103,19 +101,19 @@ func (u *UserResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Refresh the state
-	var user UserResourceModel
-	user.Id = types.Int64Value(userId)
-	diags = u.provider.syncUserWithApi(&user)
+	var userState UserResourceModel
+	userState.Id = types.Int64Value(userId)
+	diags = u.provider.syncUserWithApi(ctx, &userState)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Ensure we have a consistent plan for any known plan values
-	user.ensureConsistentCreate(&plan)
+	userState.ensureConsistentCreate(&plan)
 
 	// Update the state
-	diags = resp.State.Set(ctx, user)
+	diags = resp.State.Set(ctx, userState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -135,20 +133,20 @@ func (u *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	userId := state.Id.ValueInt64()
-	user, err := u.provider.client.GetUser(userId)
+	usr, err := u.provider.client.User.Get(ctx, userId)
 	if err != nil {
-		if err == client.ErrNotFound {
+		if strings.Contains(err.Error(), "not found") {
 			// If the user is not found, attempt to reactivate in case they were manually deactivated
-			err = u.provider.client.ReactivateUser(userId)
+			err = u.provider.client.User.Reactivate(ctx, userId)
 
 			if err == nil {
 				// If no error when reactivating, then re-fetch the user and continue with the read
-				user, err = u.provider.client.GetUser(userId)
+				usr, err = u.provider.client.User.Get(ctx, userId)
 				if err != nil {
 					addUserReadError(userId, err)
 					return
 				}
-			} else if err == client.ErrNotFound {
+			} else if strings.Contains(err.Error(), "not found") {
 				// If reactivating returns a not found error, then remove the resource
 				resp.State.RemoveResource(ctx)
 				return
@@ -163,7 +161,7 @@ func (u *UserResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		}
 	}
 
-	mapUserToState(user, &state)
+	mapUserToState(usr, &state)
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -183,20 +181,16 @@ func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	// Add the reserved groups so we don't upset Metabase
-	groupIds := addReservedUserGroups(plan)
-
 	// Update the user
 	userId := state.Id.ValueInt64()
-	updateReq := client.UpdateUserRequest{
+	err := u.provider.client.User.Update(ctx, userId, &user.UpdateRequest{
 		Email:            transforms.FromTerraformString(plan.Email),
 		FirstName:        transforms.FromTerraformString(plan.FirstName),
 		LastName:         transforms.FromTerraformString(plan.LastName),
-		GroupMemberships: mapToGroupMemberships(groupIds),
-		IsSuperuser:      transforms.FromTerraformBool(plan.IsSuperuser),
 		Locale:           transforms.FromTerraformString(plan.Locale),
-	}
-	err := u.provider.client.UpdateUser(userId, updateReq)
+		IsSuperuser:      transforms.FromTerraformBool(plan.IsSuperuser),
+		GroupMemberships: mapToGroupMemberships(transforms.FromTerraformInt64List(plan.GroupIds)),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error updating user with ID %d", userId),
@@ -206,7 +200,7 @@ func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Refresh the state
-	diags = u.provider.syncUserWithApi(&state)
+	diags = u.provider.syncUserWithApi(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -221,15 +215,15 @@ func (u *UserResource) Update(ctx context.Context, req resource.UpdateRequest, r
 }
 
 func (u *UserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var user UserResourceModel
-	diags := req.State.Get(ctx, &user)
+	var userState UserResourceModel
+	diags := req.State.Get(ctx, &userState)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	userId := user.Id.ValueInt64()
-	err := u.provider.client.DeleteUser(userId)
+	userId := userState.Id.ValueInt64()
+	err := u.provider.client.User.Disable(ctx, userId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting user",
@@ -247,7 +241,7 @@ func (u *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	//  explicitly search using GET /api/user?include_deactivated=true first?
 
 	// We'll need to reactivate the user if it exists
-	err := u.provider.client.ReactivateUser(userId)
+	err := u.provider.client.User.Reactivate(ctx, userId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error importing user with ID %d", userId),
@@ -259,7 +253,7 @@ func (u *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	// Refresh the state from the API
 	var state UserResourceModel
 	state.Id = types.Int64Value(userId)
-	diags := u.provider.syncUserWithApi(&state)
+	diags := u.provider.syncUserWithApi(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -270,7 +264,7 @@ func (u *UserResource) ImportState(ctx context.Context, req resource.ImportState
 	resp.Diagnostics.Append(diags...)
 }
 
-func buildGroupIdList(user *client.User, state *UserResourceModel) []int64 {
+func buildGroupIdList(user *user.User, state *UserResourceModel) []int64 {
 	var isReservedGroup = func(groupId int64) bool {
 		return slices.Contains(validators.ReservedGroupIds, groupId)
 	}
@@ -305,34 +299,40 @@ func buildGroupIdList(user *client.User, state *UserResourceModel) []int64 {
 	return groupIds
 }
 
-func mapUserToState(user *client.User, target *UserResourceModel) {
+func mapUserToState(user *user.User, target *UserResourceModel) {
 	groupIds := buildGroupIdList(user, target)
 
 	target.Id = types.Int64Value(user.Id)
-	target.Email = types.StringValue(user.Email)
 	target.FirstName = transforms.ToTerraformString(user.FirstName)
 	target.LastName = transforms.ToTerraformString(user.LastName)
 	target.CommonName = transforms.ToTerraformString(user.CommonName)
+	target.Email = types.StringValue(user.Email)
 	target.Locale = transforms.ToTerraformString(user.Locale)
-	target.GroupIds = transforms.ToTerraformInt64List(&groupIds)
-	target.GoogleAuth = types.BoolValue(user.GoogleAuth)
-	target.LdapAuth = types.BoolValue(user.LdapAuth)
+
 	target.IsActive = types.BoolValue(user.IsActive)
-	target.IsInstaller = types.BoolValue(user.IsInstaller)
 	target.IsQbnewb = types.BoolValue(user.IsQbnewb)
 	target.IsSuperuser = types.BoolValue(user.IsSuperuser)
+	target.IsInstaller = transforms.ToTerraformBool(user.IsInstaller)
+
+	target.GroupIds = transforms.ToTerraformInt64List(&groupIds)
+
+	target.GoogleAuth = types.BoolValue(user.GoogleAuth)
+	// TODO: sso source?
+
 	target.HasInvitedSecondUser = types.BoolValue(user.HasInvitedSecondUser)
 	target.HasQuestionAndDashboard = types.BoolValue(user.HasQuestionAndDashboard)
+	// TODO: personal collection ID?
+
 	target.DateJoined = types.StringValue(user.DateJoined)
 	target.FirstLogin = transforms.ToTerraformString(user.FirstLogin)
 	target.LastLogin = transforms.ToTerraformString(user.LastLogin)
 	target.UpdatedAt = transforms.ToTerraformString(user.UpdatedAt)
 }
 
-func (p *MetabaseProvider) syncUserWithApi(state *UserResourceModel) diag.Diagnostics {
+func (p *MetabaseProvider) syncUserWithApi(ctx context.Context, state *UserResourceModel) diag.Diagnostics {
 	userId := state.Id.ValueInt64()
 
-	userDetails, err := p.client.GetUser(userId)
+	userDetails, err := p.client.User.Get(ctx, userId)
 	if err != nil {
 		return diag.Diagnostics{
 			diag.NewErrorDiagnostic(
@@ -346,14 +346,14 @@ func (p *MetabaseProvider) syncUserWithApi(state *UserResourceModel) diag.Diagno
 	return diag.Diagnostics{}
 }
 
-func mapToGroupMemberships(groupIds *[]int64) *[]client.GroupMembership {
+func mapToGroupMemberships(groupIds *[]int64) *[]user.GroupMembership {
 	if groupIds == nil || len(*groupIds) == 0 {
 		return nil
 	}
 
-	groupMemberships := make([]client.GroupMembership, len(*groupIds))
+	groupMemberships := make([]user.GroupMembership, len(*groupIds))
 	for i, groupId := range *groupIds {
-		groupMemberships[i] = client.GroupMembership{
+		groupMemberships[i] = user.GroupMembership{
 			Id: groupId,
 		}
 	}
@@ -364,11 +364,11 @@ func addReservedUserGroups(plan UserResourceModel) *[]int64 {
 	// Add the reserved groups so we don't upset Metabase
 	groupIds := transforms.FromTerraformInt64List(plan.GroupIds)
 	if groupIds != nil {
-		if !slices.Contains(*groupIds, validators.GroupIdAllUsers) {
-			*groupIds = append(*groupIds, validators.GroupIdAllUsers)
+		if !slices.Contains(*groupIds, permissions.GroupAllUsers) {
+			*groupIds = append(*groupIds, permissions.GroupAllUsers)
 		}
-		if !slices.Contains(*groupIds, validators.GroupIdAdministrators) && plan.IsSuperuser.ValueBool() {
-			*groupIds = append(*groupIds, validators.GroupIdAdministrators)
+		if !slices.Contains(*groupIds, permissions.GroupAdministrators) && plan.IsSuperuser.ValueBool() {
+			*groupIds = append(*groupIds, permissions.GroupAdministrators)
 		}
 	}
 	return groupIds

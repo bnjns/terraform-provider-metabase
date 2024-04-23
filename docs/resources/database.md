@@ -79,10 +79,30 @@ resource "metabase_database" "example" {
 
 - `features` (List of String) The features this database engine supports.
 - `id` (Number) The ID of the database.
-- `schedules` (Map of Object) The schedules used to sync the database. (see [below for nested schema](#nestedatt--schedules))
+- `schedules` (Object) The schedules used to sync the database. (see [below for nested schema](#nestedatt--schedules))
 
 <a id="nestedatt--schedules"></a>
 ### Nested Schema for `schedules`
+
+Read-Only:
+
+- `cache_field_values` (Object) (see [below for nested schema](#nestedobjatt--schedules--cache_field_values))
+- `metadata_sync` (Object) (see [below for nested schema](#nestedobjatt--schedules--metadata_sync))
+
+<a id="nestedobjatt--schedules--cache_field_values"></a>
+### Nested Schema for `schedules.cache_field_values`
+
+Read-Only:
+
+- `day` (String)
+- `frame` (String)
+- `hour` (Number)
+- `minute` (Number)
+- `type` (String)
+
+
+<a id="nestedobjatt--schedules--metadata_sync"></a>
+### Nested Schema for `schedules.metadata_sync`
 
 Read-Only:
 

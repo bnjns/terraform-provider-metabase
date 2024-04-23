@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
 	"regexp"
-	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
 )
 
@@ -26,7 +26,7 @@ type DatabaseDataSourceModel struct {
 
 	Features  types.List   `tfsdk:"features"`
 	Details   types.String `tfsdk:"details"`
-	Schedules types.Map    `tfsdk:"schedules"`
+	Schedules types.Object `tfsdk:"schedules"`
 }
 
 type DatabaseDataSource struct {
@@ -50,7 +50,7 @@ func (d DatabaseDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	databaseId := state.Id.ValueInt64()
-	database, err := d.provider.client.GetDatabase(databaseId)
+	db, err := d.provider.client.Database.Get(ctx, databaseId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error fetching database with ID: %d", databaseId),
@@ -59,7 +59,7 @@ func (d DatabaseDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	diags = mapDatabaseToDataSource(ctx, database, &state)
+	diags = mapDatabaseToDataSource(ctx, db, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -69,19 +69,19 @@ func (d DatabaseDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(diags...)
 }
 
-func mapDatabaseToDataSource(ctx context.Context, database *client.Database, target *DatabaseDataSourceModel) diag.Diagnostics {
+func mapDatabaseToDataSource(ctx context.Context, db *database.Database, target *DatabaseDataSourceModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	target.Engine = types.StringValue(database.Engine)
-	target.Name = types.StringValue(database.Name)
-	target.Features, _ = types.ListValueFrom(ctx, types.StringType, database.Features)
+	target.Engine = types.StringValue(string(db.Engine))
+	target.Name = types.StringValue(db.Name)
+	target.Features, _ = types.ListValueFrom(ctx, types.StringType, db.Features)
 
-	schedules, scheduleDiags := buildSchedules(database)
+	schedules, scheduleDiags := buildSchedules(db)
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 
 	details := make(map[string]interface{})
-	for k, v := range *database.Details {
+	for k, v := range *db.Details {
 		if shouldIncludeDatabaseDetail(k, v) {
 			details[k] = v
 		}
@@ -89,7 +89,7 @@ func mapDatabaseToDataSource(ctx context.Context, database *client.Database, tar
 	detailsBytes, detailsErr := json.Marshal(details)
 	if detailsErr != nil {
 		diags.AddError(
-			fmt.Sprintf("Error fetching database with ID: %d", database.Id),
+			fmt.Sprintf("Error fetching database with ID: %d", db.Id),
 			fmt.Sprintf("An error occurred when serialising the details: %s", detailsErr.Error()),
 		)
 	}

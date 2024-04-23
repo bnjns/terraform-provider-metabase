@@ -30,7 +30,7 @@ func (g *PermissionsGroupDataSource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	diags = g.provider.syncPermissionsGroupWithApi(&state)
+	diags = g.provider.syncPermissionsGroupWithApi(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
