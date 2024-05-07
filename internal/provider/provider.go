@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
+	"terraform-provider-metabase/internal/utils"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -23,6 +23,7 @@ type MetabaseProvider struct {
 
 type MetabaseProviderModel struct {
 	Host     types.String `tfsdk:"host"`
+	ApiKey   types.String `tfsdk:"api_key"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	Headers  types.Map    `tfsdk:"headers"`
@@ -41,45 +42,11 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
-	var host string
-	if config.Host.IsNull() || config.Host.IsUnknown() {
-		host = os.Getenv("METABASE_HOST")
-	} else {
-		host = config.Host.ValueString()
-	}
-
+	host := utils.GetConfigValue(config.Host, "METABASE_HOST")
 	if host == "" {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
 			"Missing required value for host. Either provide explicitly in the provider config or set the METABASE_HOST environment variable.",
-		)
-	}
-
-	var username string
-	if config.Username.IsNull() || config.Username.IsUnknown() {
-		username = os.Getenv("METABASE_USERNAME")
-	} else {
-		username = config.Username.ValueString()
-	}
-
-	if username == "" {
-		resp.Diagnostics.AddError(
-			"Unable to create client",
-			"Missing required value for username. Either provide explicitly in the provider config or set the METABASE_USERNAME environment variable.",
-		)
-	}
-
-	var password string
-	if config.Password.IsNull() || config.Password.IsUnknown() {
-		password = os.Getenv("METABASE_PASSWORD")
-	} else {
-		password = config.Password.ValueString()
-	}
-
-	if password == "" {
-		resp.Diagnostics.AddError(
-			"Unable to create client",
-			"Missing required value for password. Either provide explicitly in the provider config or set the METABASE_PASSWORD environment variable.",
 		)
 	}
 
@@ -92,7 +59,7 @@ func (p *MetabaseProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
-	metabaseAuth, err := metabase.NewSessionAuthenticator(username, password)
+	metabaseAuth, err := createAuth(config)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
@@ -151,6 +118,11 @@ func (p *MetabaseProvider) Schema(ctx context.Context, req provider.SchemaReques
 				Description: "The Host URL of the Metabase instance to manage. Can also be set with the METABASE_HOST environment variable.",
 				Optional:    true,
 			},
+			"api_key": schema.StringAttribute{
+				Description: "The API key to use for authenticating with Metabase. Can also be set with the METABASE_API_KEY environment variable.",
+				Optional:    true,
+				Sensitive:   true,
+			},
 			"username": schema.StringAttribute{
 				Description: "The username of the super user to use when interacting with Metabase. Can also be set with the METABASE_USERNAME environment variable.",
 				Optional:    true,
@@ -175,5 +147,19 @@ func New(version string) func() provider.Provider {
 		return &MetabaseProvider{
 			version: version,
 		}
+	}
+}
+
+func createAuth(config MetabaseProviderModel) (metabase.Authenticator, error) {
+	apiKey := utils.GetConfigValue(config.ApiKey, "METABASE_API_KEY")
+	username := utils.GetConfigValue(config.Username, "METABASE_USERNAME")
+	password := utils.GetConfigValue(config.Password, "METABASE_PASSWORD")
+
+	if apiKey != "" {
+		return metabase.NewApiKeyAuthenticator(apiKey)
+	} else if username != "" && password != "" {
+		return metabase.NewSessionAuthenticator(username, password)
+	} else {
+		return nil, fmt.Errorf("you must set either the API key (via the api_key attribute or METABASE_API_KEY environment variable) or username and password (via the username and password attributes, or METABASE_USERNAME and METABASE_PASSWORD environment variables)")
 	}
 }

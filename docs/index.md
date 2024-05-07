@@ -33,22 +33,46 @@ provider "metabase" {
 
 ## Authentication
 
-You must configure the Metabase provider with the username (email) and password of a super user. In general, it is
-recommended that the provider uses a "machine user", which is a user account that no actual users use and exists purely
-for the provider.
+Metabase supports 2 authentication methods, which are used in the following order:
+
+1. [An API key](https://www.metabase.com/docs/latest/people-and-groups/api-keys) (v0.49 or later)
+2. Username (email) and password
+
+-> The API key or user should be a member of the _Administrators_ group so that it has access to the entire API.
+
+## Configuring the provider
+
+Most properties can be configured either using the provider attributes or environment variables:
+
+| Setting              | Provider Attribute | Environment variable |
+|----------------------|--------------------|----------------------|
+| Metabase Host URL/IP | `host`             | `METABASE_HOST`      |
+| API Key              | `api_key`          | `METABASE_API_KEY`   |
+| Username (email)     | `username`         | `METABASE_USERNAME`  |
+| Password             | `password`         | `METABASE_PASSWORD`  |
+
+### Explicit provider attributes
+
+```terraform
+provider "metabase" {
+  host    = "<your host>"
+  api_key = "<your api key>"
+}
+
+provider "metabase" {
+  host     = "<your host>"
+  username = "<your username>"
+  password = "<your password>"
+}
+```
 
 !> **Warning:** Hard-coded credentials are not recommended in any Terraform configuration and risks secret leakage.
 
 ### Using env variables
 
-The simplest way to configure the provider is to configure the host, username, and password using the environment variables:
-
-- `METABASE_HOST`
-- `METABASE_USERNAME`
-- `METABASE_PASSWORD`
-
 ```terraform
-# The provider will be automatically configured with the METABASE_HOST, METABASE_USERNAME and METABASE_PASSWORD
+# The provider will be automatically configured with the METABASE_HOST,
+# and METABASE_API_KEY or METABASE_USERNAME and METABASE_PASSWORD
 # environment variables.
 provider "metabase" {}
 ```
@@ -85,8 +109,10 @@ provider "metabase" {
 
 ### Optional
 
+- `api_key` (String, Sensitive) The API key to use for authenticating with Metabase. Can also be set with the METABASE_API_KEY environment variable.
 - `headers` (Map of String, Sensitive) Optional headers to attach to every request to Metabase.
 - `host` (String) The Host URL of the Metabase instance to manage. Can also be set with the METABASE_HOST environment variable.
 - `password` (String, Sensitive) The password of the super user to use when interacting with Metabase. Can also be set with the METABASE_PASSWORD environment variable.
 - `username` (String) The username of the super user to use when interacting with Metabase. Can also be set with the METABASE_USERNAME environment variable.
+
 

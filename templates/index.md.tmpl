@@ -15,19 +15,31 @@ infrastructure-as-code.
 
 ## Authentication
 
-You must configure the Metabase provider with the username (email) and password of a super user. In general, it is
-recommended that the provider uses a "machine user", which is a user account that no actual users use and exists purely
-for the provider.
+Metabase supports 2 authentication methods, which are used in the following order:
+
+1. [An API key](https://www.metabase.com/docs/latest/people-and-groups/api-keys) (v0.49 or later)
+2. Username (email) and password
+
+-> The API key or user should be a member of the _Administrators_ group so that it has access to the entire API.
+
+## Configuring the provider
+
+Most properties can be configured either using the provider attributes or environment variables:
+
+| Setting              | Provider Attribute | Environment variable |
+|----------------------|--------------------|----------------------|
+| Metabase Host URL/IP | `host`             | `METABASE_HOST`      |
+| API Key              | `api_key`          | `METABASE_API_KEY`   |
+| Username (email)     | `username`         | `METABASE_USERNAME`  |
+| Password             | `password`         | `METABASE_PASSWORD`  |
+
+### Explicit provider attributes
+
+{{ tffile "examples/provider/provider_attributes.tf" }}
 
 !> **Warning:** Hard-coded credentials are not recommended in any Terraform configuration and risks secret leakage.
 
 ### Using env variables
-
-The simplest way to configure the provider is to configure the host, username, and password using the environment variables:
-
-- `METABASE_HOST`
-- `METABASE_USERNAME`
-- `METABASE_PASSWORD`
 
 {{ tffile "examples/provider/provider_env.tf" }}
 

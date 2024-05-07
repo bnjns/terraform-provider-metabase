@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/bnjns/metabase-sdk-go v0.1.1
+	github.com/bnjns/metabase-sdk-go v0.1.2
 	github.com/hashicorp/terraform-plugin-docs v0.19.2
 	github.com/hashicorp/terraform-plugin-framework v1.8.0
 	github.com/hashicorp/terraform-plugin-go v0.23.0
