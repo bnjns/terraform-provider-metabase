@@ -22,7 +22,7 @@ func (t *CurrentUserDataSource) Schema(ctx context.Context, req datasource.Schem
 }
 
 func (t *CurrentUserDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	currentUserDetails, err := t.provider.client.GetCurrentUser()
+	currentUserDetails, err := t.provider.client.User.GetCurrentUser(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to get current user",

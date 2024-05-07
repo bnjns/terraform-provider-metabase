@@ -2,6 +2,7 @@ package validators
 
 import (
 	"context"
+	"github.com/bnjns/metabase-sdk-go/service/permissions"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -50,7 +51,7 @@ func TestUserNotInReservedGroupsValidator(t *testing.T) {
 	})
 
 	t.Run("a list of groups that contains the all users reserved group should return an error", func(t *testing.T) {
-		tfGroupIds, _ := types.ListValueFrom(ctx, types.Int64Type, []int64{4, 5, GroupIdAllUsers, 8})
+		tfGroupIds, _ := types.ListValueFrom(ctx, types.Int64Type, []int64{4, 5, permissions.GroupAllUsers, 8})
 
 		request := validator.ListRequest{
 			Path:        path.Empty(),
@@ -64,7 +65,7 @@ func TestUserNotInReservedGroupsValidator(t *testing.T) {
 	})
 
 	t.Run("a list of groups that contains the administrators reserved group should return an error", func(t *testing.T) {
-		tfGroupIds, _ := types.ListValueFrom(ctx, types.Int64Type, []int64{4, 5, GroupIdAdministrators, 8})
+		tfGroupIds, _ := types.ListValueFrom(ctx, types.Int64Type, []int64{4, 5, permissions.GroupAdministrators, 8})
 
 		request := validator.ListRequest{
 			Path:        path.Empty(),

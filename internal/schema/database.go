@@ -13,6 +13,12 @@ import (
 	"terraform-provider-metabase/internal/validators"
 )
 
+var DatabaseSchedulesType = types.ObjectType{
+	AttrTypes: map[string]attr.Type{
+		"metadata_sync":      DatabaseScheduleType,
+		"cache_field_values": DatabaseScheduleType,
+	},
+}
 var DatabaseScheduleType = types.ObjectType{
 	AttrTypes: map[string]attr.Type{
 		"day":    types.StringType,
@@ -66,10 +72,10 @@ func DatabaseResource() rSchema.Schema {
 				Optional:    true,
 				Sensitive:   true,
 			},
-			"schedules": rSchema.MapAttribute{
-				ElementType: DatabaseScheduleType,
-				Description: "The schedules used to sync the database.",
-				Computed:    true,
+			"schedules": rSchema.ObjectAttribute{
+				AttributeTypes: DatabaseSchedulesType.AttributeTypes(),
+				Description:    "The schedules used to sync the database.",
+				Computed:       true,
 			},
 		},
 	}
@@ -100,10 +106,10 @@ func DatabaseDataSource() dSchema.Schema {
 				Description: "Serialised JSON string containing the configuration options for the database. This will not contain any sensitive/redacted properties.",
 				Computed:    true,
 			},
-			"schedules": dSchema.MapAttribute{
-				ElementType: DatabaseScheduleType,
-				Description: "The schedules used to sync the database.",
-				Computed:    true,
+			"schedules": dSchema.ObjectAttribute{
+				AttributeTypes: DatabaseSchedulesType.AttributeTypes(),
+				Description:    "The schedules used to sync the database.",
+				Computed:       true,
 			},
 		},
 	}

@@ -3,11 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/permissions"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
-	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/utils"
 )
@@ -41,10 +41,9 @@ func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	createReq := client.PermissionsGroupRequest{
+	groupId, err := g.provider.client.Permissions.CreateGroup(ctx, &permissions.CreateGroupRequest{
 		Name: plan.Name.ValueString(),
-	}
-	groupId, err := g.provider.client.CreatePermissionsGroup(createReq)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating permissions group",
@@ -56,7 +55,7 @@ func (g *PermissionsGroupResource) Create(ctx context.Context, req resource.Crea
 	// Refresh the state
 	var group PermissionsGroupModel
 	group.Id = types.Int64Value(groupId)
-	diags = g.provider.syncPermissionsGroupWithApi(&group)
+	diags = g.provider.syncPermissionsGroupWithApi(ctx, &group)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -79,7 +78,7 @@ func (g *PermissionsGroupResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	groupId := state.Id.ValueInt64()
-	group, err := g.provider.client.GetPermissionsGroup(groupId)
+	group, err := g.provider.client.Permissions.GetGroup(ctx, groupId)
 	if err != nil {
 		diags = utils.HandleResourceReadError(ctx, "permissions group", groupId, err, resp)
 		resp.Diagnostics.Append(diags...)
@@ -108,10 +107,9 @@ func (g *PermissionsGroupResource) Update(ctx context.Context, req resource.Upda
 
 	// Update the permissions group
 	groupId := state.Id.ValueInt64()
-	updateReq := client.PermissionsGroupRequest{
+	err := g.provider.client.Permissions.UpdateGroup(ctx, groupId, &permissions.UpdateGroupRequest{
 		Name: plan.Name.ValueString(),
-	}
-	err := g.provider.client.UpdatePermissionsGroup(groupId, updateReq)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error updating permissions group with ID %d", groupId),
@@ -121,7 +119,7 @@ func (g *PermissionsGroupResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	// Refresh the state
-	diags = g.provider.syncPermissionsGroupWithApi(&state)
+	diags = g.provider.syncPermissionsGroupWithApi(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -144,7 +142,7 @@ func (g *PermissionsGroupResource) Delete(ctx context.Context, req resource.Dele
 	}
 
 	groupId := group.Id.ValueInt64()
-	err := g.provider.client.DeletePermissionsGroup(groupId)
+	err := g.provider.client.Permissions.DeleteGroup(ctx, groupId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error deleting permissions group with ID %d", groupId),
@@ -160,7 +158,7 @@ func (g *PermissionsGroupResource) ImportState(ctx context.Context, req resource
 	// Refresh the state from the API
 	var state PermissionsGroupModel
 	state.Id = types.Int64Value(groupId)
-	diags := g.provider.syncPermissionsGroupWithApi(&state)
+	diags := g.provider.syncPermissionsGroupWithApi(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -171,15 +169,15 @@ func (g *PermissionsGroupResource) ImportState(ctx context.Context, req resource
 	resp.Diagnostics.Append(diags...)
 }
 
-func mapPermissionsGroupToState(group *client.PermissionsGroup, target *PermissionsGroupModel) {
+func mapPermissionsGroupToState(group *permissions.Group, target *PermissionsGroupModel) {
 	target.Id = types.Int64Value(group.Id)
 	target.Name = types.StringValue(group.Name)
 }
 
-func (p *MetabaseProvider) syncPermissionsGroupWithApi(state *PermissionsGroupModel) diag.Diagnostics {
+func (p *MetabaseProvider) syncPermissionsGroupWithApi(ctx context.Context, state *PermissionsGroupModel) diag.Diagnostics {
 	groupId := state.Id.ValueInt64()
 
-	groupDetails, err := p.client.GetPermissionsGroup(groupId)
+	groupDetails, err := p.client.Permissions.GetGroup(ctx, groupId)
 	if err != nil {
 		return diag.Diagnostics{
 			diag.NewErrorDiagnostic(

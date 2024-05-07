@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bnjns/metabase-sdk-go/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strconv"
-	"terraform-provider-metabase/internal/client"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
 	"terraform-provider-metabase/internal/utils"
@@ -23,7 +24,7 @@ type DatabaseModel struct {
 	Features      types.List   `tfsdk:"features"`
 	Details       types.String `tfsdk:"details"`
 	DetailsSecure types.String `tfsdk:"details_secure"`
-	Schedules     types.Map    `tfsdk:"schedules"`
+	Schedules     types.Object `tfsdk:"schedules"`
 }
 
 // Ensure provider fully satisfies the framework interfaces
@@ -60,13 +61,17 @@ func (d *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	createRequest, diags := plan.toRequest()
+	databaseDetails, diags := plan.buildDatabaseDetails()
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	databaseId, err := d.provider.client.CreateDatabase(*createRequest)
+	databaseId, err := d.provider.client.Database.Create(ctx, &database.CreateRequest{
+		Name:    plan.Name.ValueString(),
+		Engine:  database.Engine(plan.Engine.ValueString()),
+		Details: databaseDetails,
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating database",
@@ -94,13 +99,13 @@ func (d *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	databaseId := state.Id.ValueInt64()
-	database, err := d.provider.client.GetDatabase(databaseId)
+	db, err := d.provider.client.Database.Get(ctx, databaseId)
 	if err != nil {
 		diags = utils.HandleResourceReadError(ctx, "database", databaseId, err, resp)
 		resp.Diagnostics.Append(diags...)
 		return
 	}
-	diags = mapDatabaseToState(ctx, database, &state)
+	diags = mapDatabaseToState(ctx, db, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -113,13 +118,33 @@ func (d *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	databaseId := plan.Id.ValueInt64()
-	updateRequest, diags := plan.toRequest()
+	databaseDetails, diags := plan.buildDatabaseDetails()
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err := d.provider.client.UpdateDatabase(databaseId, *updateRequest)
+	db, err := d.provider.client.Database.Get(ctx, databaseId)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error updating database with ID %d", databaseId),
+			fmt.Sprintf("An error occurred when fetching the database: %s", err.Error()),
+		)
+		return
+	}
+
+	err = d.provider.client.Database.Update(ctx, databaseId, &database.UpdateRequest{
+		Name:             plan.Name.ValueStringPointer(),
+		Engine:           &db.Engine,
+		Refingerprint:    &db.Refingerprint,
+		Details:          &databaseDetails,
+		Schedules:        db.Schedules,
+		Caveats:          db.Caveats,
+		PointsOfInterest: db.PointsOfInterest,
+		AutoRunQueries:   &db.AutoRunQueries,
+		CacheTTL:         db.CacheTTL,
+		Settings:         db.Settings,
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error updating database with ID %d", databaseId),
@@ -146,7 +171,7 @@ func (d *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	databaseId := state.Id.ValueInt64()
-	err := d.provider.client.DeleteDatabase(databaseId)
+	err := d.provider.client.Database.Delete(ctx, databaseId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error deleting database: %d", databaseId),
@@ -173,8 +198,8 @@ func (d *DatabaseResource) ImportState(ctx context.Context, req resource.ImportS
 	resp.Diagnostics.Append(diags...)
 }
 
-func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) {
-	engine := client.DatabaseEngine(d.Engine.ValueString())
+func (d *DatabaseModel) buildDatabaseDetails() (database.Details, diag.Diagnostics) {
+	engine := database.Engine(d.Engine.ValueString())
 	var diags diag.Diagnostics
 
 	// Map the JSON-encoded details string into a map
@@ -218,15 +243,11 @@ func (d *DatabaseModel) toRequest() (*client.DatabaseRequest, diag.Diagnostics) 
 		return nil, diags
 	}
 
-	return &client.DatabaseRequest{
-		Engine:  engine,
-		Name:    d.Name.ValueString(),
-		Details: detailsCombined,
-	}, nil
+	return detailsCombined, nil
 }
 
 func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId int64, plan DatabaseModel) (DatabaseModel, diag.Diagnostics) {
-	database, err := d.provider.client.GetDatabase(databaseId)
+	db, err := d.provider.client.Database.Get(ctx, databaseId)
 	if err != nil {
 		return DatabaseModel{}, diag.Diagnostics{
 			diag.NewErrorDiagnostic(
@@ -237,7 +258,7 @@ func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId in
 	}
 
 	var state DatabaseModel
-	diags := mapDatabaseToState(ctx, database, &state)
+	diags := mapDatabaseToState(ctx, db, &state)
 
 	// Override both details and details_secure
 	// The API can return additional keys in details, and anything in details_secure is redacted so the response is useless
@@ -247,42 +268,47 @@ func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId in
 	return state, diags
 }
 
-func mapDatabaseToState(ctx context.Context, database *client.Database, target *DatabaseModel) diag.Diagnostics {
+func mapDatabaseToState(ctx context.Context, db *database.Database, target *DatabaseModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	target.Id = types.Int64Value(database.Id)
-	target.Engine = types.StringValue(database.Engine)
-	target.Name = types.StringValue(database.Name)
-	target.Features, _ = types.ListValueFrom(ctx, types.StringType, database.Features)
+	target.Id = types.Int64Value(db.Id)
+	target.Engine = types.StringValue(string(db.Engine))
+	target.Name = types.StringValue(db.Name)
+	target.Features, _ = types.ListValueFrom(ctx, types.StringType, db.Features)
 	target.Details = types.StringUnknown()
 	target.DetailsSecure = types.StringUnknown()
 
-	schedules, scheduleDiags := buildSchedules(database)
+	schedules, scheduleDiags := buildSchedules(db)
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 	return diags
 }
 
-func buildSchedules(database *client.Database) (types.Map, diag.Diagnostics) {
-	if database.Schedules == nil {
-		return types.MapValue(schema.DatabaseScheduleType, map[string]attr.Value{})
-	}
-
-	schedules := make(map[string]attr.Value, len(*database.Schedules))
-	for name, schedule := range *database.Schedules {
-		schedules[name], _ = types.ObjectValue(schema.DatabaseScheduleType.AttributeTypes(), map[string]attr.Value{
-			"day":    transforms.ToTerraformString(schedule.Day),
-			"frame":  transforms.ToTerraformString(schedule.Frame),
-			"hour":   transforms.ToTerraformInt(schedule.Hour),
-			"minute": transforms.ToTerraformInt(schedule.Minute),
-			"type":   types.StringValue(schedule.Type),
-		})
-	}
-
-	return types.MapValue(schema.DatabaseScheduleType, schedules)
+func buildScheduleSettings(settings *database.ScheduleSettings) basetypes.ObjectValue {
+	scheduleSettings, _ := types.ObjectValue(schema.DatabaseScheduleType.AttributeTypes(), map[string]attr.Value{
+		"type":   types.StringValue(string(settings.Type)),
+		"day":    transforms.ToTerraformString((*string)(settings.Day)),
+		"frame":  transforms.ToTerraformString((*string)(settings.Frame)),
+		"hour":   transforms.ToTerraformInt(settings.Hour),
+		"minute": transforms.ToTerraformInt(settings.Minute),
+	})
+	return scheduleSettings
 }
 
-func checkDatabaseDetails(engine client.DatabaseEngine, details map[string]interface{}) []error {
+func buildSchedules(db *database.Database) (types.Object, diag.Diagnostics) {
+	if db.Schedules == nil {
+		return types.ObjectNull(schema.DatabaseSchedulesType.AttributeTypes()), nil
+	}
+
+	schedules := map[string]attr.Value{
+		"metadata_sync":      buildScheduleSettings(db.Schedules.MetadataSync),
+		"cache_field_values": buildScheduleSettings(db.Schedules.CacheFieldValues),
+	}
+
+	return types.ObjectValue(schema.DatabaseSchedulesType.AttributeTypes(), schedules)
+}
+
+func checkDatabaseDetails(engine database.Engine, details map[string]interface{}) []error {
 	var errs []error
 
 	var requireDetail = func(detail string, errIfMissing error) {
@@ -292,9 +318,7 @@ func checkDatabaseDetails(engine client.DatabaseEngine, details map[string]inter
 	}
 
 	switch engine {
-	case client.EngineH2:
-		requireDetail("db", errMissingConnString)
-	case client.EnginePostgres:
+	case database.EnginePostgres:
 		requireDetail("dbname", errMissingDbName)
 		requireDetail("host", errMissingHost)
 		requireDetail("user", errMissingUser)

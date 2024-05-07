@@ -10,3 +10,11 @@ func FromTerraformBool(b types.Bool) *bool {
 		return &val
 	}
 }
+
+func ToTerraformBool(b *bool) types.Bool {
+	if b == nil {
+		return types.BoolNull()
+	} else {
+		return types.BoolValue(*b)
+	}
+}
