@@ -285,6 +285,10 @@ func mapDatabaseToState(ctx context.Context, db *database.Database, target *Data
 }
 
 func buildScheduleSettings(settings *database.ScheduleSettings) basetypes.ObjectValue {
+	if settings == nil {
+		return types.ObjectNull(schema.DatabaseScheduleType.AttributeTypes())
+	}
+
 	scheduleSettings, _ := types.ObjectValue(schema.DatabaseScheduleType.AttributeTypes(), map[string]attr.Value{
 		"type":   types.StringValue(string(settings.Type)),
 		"day":    transforms.ToTerraformString((*string)(settings.Day)),

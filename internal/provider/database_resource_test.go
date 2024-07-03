@@ -76,6 +76,25 @@ func TestBuildSchedules(t *testing.T) {
 
 		assert.Equal(t, 2, len(schedules.Attributes()))
 	})
+
+	t.Run("a database with nil schedules should return a map with null values", func(t *testing.T) {
+		db := database.Database{
+			Schedules: &database.Schedules{
+				MetadataSync:     nil,
+				CacheFieldValues: nil,
+			},
+		}
+
+		schedules, diags := buildSchedules(&db)
+		assert.Zero(t, len(diags))
+		assert.False(t, schedules.IsNull())
+		assert.False(t, schedules.IsUnknown())
+
+		assert.Equal(t, 2, len(schedules.Attributes()))
+		for _, schedule := range schedules.Attributes() {
+			assert.True(t, schedule.IsNull())
+		}
+	})
 }
 
 func TestAccDatabaseResource_PostgreSQL(t *testing.T) {
