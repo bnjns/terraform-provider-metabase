@@ -3,7 +3,7 @@ set -eo pipefail
 
 readonly health_limit=180
 
-docker-compose up -d "${@}"
+docker compose up -d "${@}"
 
 readonly services=($(docker ps --filter "name=mb-" --format "{{ .Names }}"))
 
@@ -31,5 +31,5 @@ do
 done
 
 echo "Services (${services[@]}) did not become healthy after $health_limit seconds"
-docker-compose logs > container_logs.log
+docker compose logs > container_logs.log
 exit 1
