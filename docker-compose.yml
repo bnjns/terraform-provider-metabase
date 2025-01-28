@@ -36,3 +36,18 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
+  mongo:
+    image: mongo
+    container_name: mb-mongo
+    networks:
+      - main
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(mongosh \"mongodb://mongo:mongo@localhost:27017/\" --eval 'db.adminCommand(\"ping\").ok') -eq 1 ]"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
