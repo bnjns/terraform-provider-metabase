@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bnjns/metabase-sdk-go/service/database"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strconv"
+	"strings"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
 	"terraform-provider-metabase/internal/utils"
@@ -260,10 +262,14 @@ func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId in
 	var state DatabaseModel
 	diags := mapDatabaseToState(ctx, db, &state)
 
-	// Override both details and details_secure
-	// The API can return additional keys in details, and anything in details_secure is redacted so the response is useless
-	state.Details = plan.Details
-	state.DetailsSecure = plan.DetailsSecure
+	// Override both details and details_secure if they're set in the plan as the API can return additional keys in
+	// details and this produces an inconsistent result
+	if !plan.Details.IsUnknown() {
+		state.Details = plan.Details
+	}
+	if !plan.DetailsSecure.IsUnknown() {
+		state.DetailsSecure = plan.DetailsSecure
+	}
 
 	return state, diags
 }
@@ -275,13 +281,52 @@ func mapDatabaseToState(ctx context.Context, db *database.Database, target *Data
 	target.Engine = types.StringValue(string(db.Engine))
 	target.Name = types.StringValue(db.Name)
 	target.Features, _ = types.ListValueFrom(ctx, types.StringType, db.Features)
-	target.Details = types.StringUnknown()
-	target.DetailsSecure = types.StringUnknown()
 
 	schedules, scheduleDiags := buildSchedules(db)
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
+
+	details, detailsSecure, detailsDiags := buildDetails(db)
+	target.Details = details
+	target.DetailsSecure = detailsSecure
+	diags.Append(detailsDiags...)
+
 	return diags
+}
+
+func buildDetails(db *database.Database) (types.String, types.String, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if db.Details == nil {
+		return types.StringNull(), types.StringNull(), diags
+	}
+
+	details := make(map[string]any)
+	detailsSecure := make(map[string]any)
+	for k, v := range *db.Details {
+		switch v.(type) {
+		case string:
+			if strings.HasPrefix(v.(string), "**") && strings.HasSuffix(v.(string), "**") {
+				detailsSecure[k] = v
+			} else {
+				details[k] = v
+			}
+		default:
+			details[k] = v
+		}
+	}
+
+	detailsStr, err := json.Marshal(details)
+	if err != nil {
+		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Error parsing details for database %d", db.Id), err.Error()))
+	}
+
+	detailsSecureStr, err := json.Marshal(detailsSecure)
+	if err != nil {
+		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Error parsing details_secure for database %d", db.Id), err.Error()))
+	}
+
+	return types.StringValue(string(detailsStr)), types.StringValue(string(detailsSecureStr)), diags
 }
 
 func buildScheduleSettings(settings *database.ScheduleSettings) basetypes.ObjectValue {
