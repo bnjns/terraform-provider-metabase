@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bnjns/metabase-sdk-go/service/database"
@@ -10,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"golang.org/x/exp/slices"
+	"regexp"
 	"strconv"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
@@ -39,7 +42,8 @@ var (
 	errMissingUser       = errors.New("you must provide the auth username in the 'user' property")
 	errMissingPassword   = errors.New("you must provide the auth password in the 'password' property")
 )
-var databaseSensitiveProperties = []string{"password"}
+var sensitiveDatabaseDetails = []string{"password", "service-account-json"}
+var redactedPattern = regexp.MustCompile(`^\*\*.+\*\*$`)
 
 type DatabaseResource struct {
 	provider *MetabaseProvider
@@ -260,10 +264,14 @@ func (d *DatabaseResource) fetchDatabaseState(ctx context.Context, databaseId in
 	var state DatabaseModel
 	diags := mapDatabaseToState(ctx, db, &state)
 
-	// Override both details and details_secure
-	// The API can return additional keys in details, and anything in details_secure is redacted so the response is useless
-	state.Details = plan.Details
-	state.DetailsSecure = plan.DetailsSecure
+	// Override both details and details_secure if they're set in the plan as the API can return additional keys in
+	// details and this produces an inconsistent result
+	if !plan.Details.IsUnknown() {
+		state.Details = plan.Details
+	}
+	if !plan.DetailsSecure.IsUnknown() {
+		state.DetailsSecure = plan.DetailsSecure
+	}
 
 	return state, diags
 }
@@ -275,13 +283,64 @@ func mapDatabaseToState(ctx context.Context, db *database.Database, target *Data
 	target.Engine = types.StringValue(string(db.Engine))
 	target.Name = types.StringValue(db.Name)
 	target.Features, _ = types.ListValueFrom(ctx, types.StringType, db.Features)
-	target.Details = types.StringUnknown()
-	target.DetailsSecure = types.StringUnknown()
 
 	schedules, scheduleDiags := buildSchedules(db)
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
+
+	details, detailsSecure, detailsDiags := buildDatabaseDetails(db)
+	target.Details = details
+	target.DetailsSecure = detailsSecure
+	diags.Append(detailsDiags...)
+
 	return diags
+}
+
+func isSensitiveDatabaseDetail(key string, value interface{}) bool {
+	if slices.Contains(sensitiveDatabaseDetails, key) {
+		return true
+	}
+
+	valueStr, isString := value.(string)
+	if !isString {
+		return false
+	}
+
+	if redactedPattern.MatchString(valueStr) {
+		return true
+	}
+
+	return false
+}
+
+func buildDatabaseDetails(db *database.Database) (types.String, types.String, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if db.Details == nil {
+		return types.StringNull(), types.StringNull(), diags
+	}
+
+	details := make(map[string]any)
+	detailsSecure := make(map[string]any)
+	for k, v := range *db.Details {
+		if isSensitiveDatabaseDetail(k, v) {
+			detailsSecure[k] = v
+		} else {
+			details[k] = v
+		}
+	}
+
+	detailsStr, err := json.Marshal(details)
+	if err != nil {
+		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Error parsing details for database %d", db.Id), err.Error()))
+	}
+
+	detailsSecureStr, err := json.Marshal(detailsSecure)
+	if err != nil {
+		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Error parsing details_secure for database %d", db.Id), err.Error()))
+	}
+
+	return types.StringValue(string(detailsStr)), types.StringValue(string(detailsSecureStr)), diags
 }
 
 func buildScheduleSettings(settings *database.ScheduleSettings) basetypes.ObjectValue {

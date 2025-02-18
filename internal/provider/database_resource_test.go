@@ -9,6 +9,34 @@ import (
 
 var ignoredDatabaseImportAttributes = []string{"details", "details_secure"}
 
+func TestIsSensitiveDatabaseDetail(t *testing.T) {
+	t.Parallel()
+
+	t.Run("detail with sensitive key should be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("password", "example")
+
+		assert.True(t, result)
+	})
+
+	t.Run("detail with a non-string value should not be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("port", 5432)
+
+		assert.False(t, result)
+	})
+
+	t.Run("detail with a redacted string value should be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("field", "**MetabasePass**")
+
+		assert.True(t, result)
+	})
+
+	t.Run("detail with a non-redacted string value should not be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("host", "localhost")
+
+		assert.False(t, result)
+	})
+}
+
 func TestCheckDatabaseDetails(t *testing.T) {
 	t.Parallel()
 
@@ -94,6 +122,47 @@ func TestBuildSchedules(t *testing.T) {
 		for _, schedule := range schedules.Attributes() {
 			assert.True(t, schedule.IsNull())
 		}
+	})
+}
+
+func TestBuildDatabaseDetails(t *testing.T) {
+	t.Parallel()
+
+	t.Run("a database with no details should return null", func(t *testing.T) {
+		db := database.Database{
+			Details: nil,
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.True(t, details.IsNull())
+		assert.True(t, detailsSecure.IsNull())
+	})
+
+	t.Run("a database with an empty details map should be parsed as empty json objects", func(t *testing.T) {
+		db := database.Database{
+			Details: &database.Details{},
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.Equal(t, `{}`, details.ValueString())
+		assert.Equal(t, `{}`, detailsSecure.ValueString())
+	})
+
+	t.Run("a database with details should have the sensitive details separated", func(t *testing.T) {
+		db := database.Database{
+			Details: &database.Details{
+				"password": "password",
+				"name":     "database name",
+				"redacted": "**MetabasePass**",
+			},
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.Equal(t, `{"name":"database name"}`, details.ValueString())
+		assert.Equal(t, `{"password":"password","redacted":"**MetabasePass**"}`, detailsSecure.ValueString())
 	})
 }
 
