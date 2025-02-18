@@ -288,7 +288,7 @@ func mapDatabaseToState(ctx context.Context, db *database.Database, target *Data
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 
-	details, detailsSecure, detailsDiags := buildDetails(db)
+	details, detailsSecure, detailsDiags := buildDatabaseDetails(db)
 	target.Details = details
 	target.DetailsSecure = detailsSecure
 	diags.Append(detailsDiags...)
@@ -313,7 +313,7 @@ func isSensitiveDatabaseDetail(key string, value interface{}) bool {
 	return false
 }
 
-func buildDetails(db *database.Database) (types.String, types.String, diag.Diagnostics) {
+func buildDatabaseDetails(db *database.Database) (types.String, types.String, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	if db.Details == nil {

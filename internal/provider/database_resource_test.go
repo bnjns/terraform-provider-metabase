@@ -125,6 +125,47 @@ func TestBuildSchedules(t *testing.T) {
 	})
 }
 
+func TestBuildDatabaseDetails(t *testing.T) {
+	t.Parallel()
+
+	t.Run("a database with no details should return null", func(t *testing.T) {
+		db := database.Database{
+			Details: nil,
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.True(t, details.IsNull())
+		assert.True(t, detailsSecure.IsNull())
+	})
+
+	t.Run("a database with an empty details map should be parsed as empty json objects", func(t *testing.T) {
+		db := database.Database{
+			Details: &database.Details{},
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.Equal(t, `{}`, details.ValueString())
+		assert.Equal(t, `{}`, detailsSecure.ValueString())
+	})
+
+	t.Run("a database with details should have the sensitive details separated", func(t *testing.T) {
+		db := database.Database{
+			Details: &database.Details{
+				"password": "password",
+				"name":     "database name",
+				"redacted": "**MetabasePass**",
+			},
+		}
+
+		details, detailsSecure, diags := buildDatabaseDetails(&db)
+		assert.Zero(t, len(diags))
+		assert.Equal(t, `{"name":"database name"}`, details.ValueString())
+		assert.Equal(t, `{"password":"password","redacted":"**MetabasePass**"}`, detailsSecure.ValueString())
+	})
+}
+
 func TestAccDatabaseResource_PostgreSQL(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

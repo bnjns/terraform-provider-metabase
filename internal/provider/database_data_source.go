@@ -74,7 +74,7 @@ func mapDatabaseToDataSource(ctx context.Context, db *database.Database, target 
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 
-	details, _, detailsDiags := buildDetails(db)
+	details, _, detailsDiags := buildDatabaseDetails(db)
 	target.Details = details
 	diags.Append(detailsDiags...)
 
