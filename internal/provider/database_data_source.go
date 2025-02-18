@@ -2,19 +2,13 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/bnjns/metabase-sdk-go/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/exp/slices"
-	"regexp"
 	"terraform-provider-metabase/internal/schema"
 )
-
-var sensitiveDatabaseDetails = []string{"password", "service-account-json"}
-var redactedPattern = regexp.MustCompile(`^\*\*.+\*\*$`)
 
 // Ensure provider defined types fully satisfy framework interfaces
 var _ datasource.DataSource = &DatabaseDataSource{}
@@ -80,37 +74,9 @@ func mapDatabaseToDataSource(ctx context.Context, db *database.Database, target 
 	target.Schedules = schedules
 	diags.Append(scheduleDiags...)
 
-	details := make(map[string]interface{})
-	for k, v := range *db.Details {
-		if shouldIncludeDatabaseDetail(k, v) {
-			details[k] = v
-		}
-	}
-	detailsBytes, detailsErr := json.Marshal(details)
-	if detailsErr != nil {
-		diags.AddError(
-			fmt.Sprintf("Error fetching database with ID: %d", db.Id),
-			fmt.Sprintf("An error occurred when serialising the details: %s", detailsErr.Error()),
-		)
-	}
-	target.Details = types.StringValue(string(detailsBytes))
+	details, _, detailsDiags := buildDetails(db)
+	target.Details = details
+	diags.Append(detailsDiags...)
 
 	return diags
-}
-
-func shouldIncludeDatabaseDetail(key string, value interface{}) bool {
-	if slices.Contains(sensitiveDatabaseDetails, key) {
-		return false
-	}
-
-	valueStr, isString := value.(string)
-	if !isString {
-		return true
-	}
-
-	if redactedPattern.MatchString(valueStr) {
-		return false
-	}
-
-	return true
 }

@@ -11,8 +11,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"golang.org/x/exp/slices"
+	"regexp"
 	"strconv"
-	"strings"
 	"terraform-provider-metabase/internal/schema"
 	"terraform-provider-metabase/internal/transforms"
 	"terraform-provider-metabase/internal/utils"
@@ -41,7 +42,8 @@ var (
 	errMissingUser       = errors.New("you must provide the auth username in the 'user' property")
 	errMissingPassword   = errors.New("you must provide the auth password in the 'password' property")
 )
-var databaseSensitiveProperties = []string{"password"}
+var sensitiveDatabaseDetails = []string{"password", "service-account-json"}
+var redactedPattern = regexp.MustCompile(`^\*\*.+\*\*$`)
 
 type DatabaseResource struct {
 	provider *MetabaseProvider
@@ -294,6 +296,23 @@ func mapDatabaseToState(ctx context.Context, db *database.Database, target *Data
 	return diags
 }
 
+func isSensitiveDatabaseDetail(key string, value interface{}) bool {
+	if slices.Contains(sensitiveDatabaseDetails, key) {
+		return true
+	}
+
+	valueStr, isString := value.(string)
+	if !isString {
+		return false
+	}
+
+	if redactedPattern.MatchString(valueStr) {
+		return true
+	}
+
+	return false
+}
+
 func buildDetails(db *database.Database) (types.String, types.String, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -304,14 +323,9 @@ func buildDetails(db *database.Database) (types.String, types.String, diag.Diagn
 	details := make(map[string]any)
 	detailsSecure := make(map[string]any)
 	for k, v := range *db.Details {
-		switch v.(type) {
-		case string:
-			if strings.HasPrefix(v.(string), "**") && strings.HasSuffix(v.(string), "**") {
-				detailsSecure[k] = v
-			} else {
-				details[k] = v
-			}
-		default:
+		if isSensitiveDatabaseDetail(k, v) {
+			detailsSecure[k] = v
+		} else {
 			details[k] = v
 		}
 	}

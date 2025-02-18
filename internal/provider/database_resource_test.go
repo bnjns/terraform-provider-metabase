@@ -9,6 +9,34 @@ import (
 
 var ignoredDatabaseImportAttributes = []string{"details", "details_secure"}
 
+func TestIsSensitiveDatabaseDetail(t *testing.T) {
+	t.Parallel()
+
+	t.Run("detail with sensitive key should be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("password", "example")
+
+		assert.True(t, result)
+	})
+
+	t.Run("detail with a non-string value should not be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("port", 5432)
+
+		assert.False(t, result)
+	})
+
+	t.Run("detail with a redacted string value should be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("field", "**MetabasePass**")
+
+		assert.True(t, result)
+	})
+
+	t.Run("detail with a non-redacted string value should not be sensitive", func(t *testing.T) {
+		result := isSensitiveDatabaseDetail("host", "localhost")
+
+		assert.False(t, result)
+	})
+}
+
 func TestCheckDatabaseDetails(t *testing.T) {
 	t.Parallel()
 
