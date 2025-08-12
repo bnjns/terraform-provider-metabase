@@ -24,7 +24,7 @@ jobs:
       METABASE_USERNAME: example@example.com
       METABASE_PASSWORD: password
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - shell: bash
@@ -62,7 +62,7 @@ jobs:
           - '1.0'
           - '1.1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - shell: bash
@@ -99,7 +99,7 @@ jobs:
       - unit
       - acceptance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/download-artifact@v5
