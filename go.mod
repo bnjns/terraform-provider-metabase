@@ -1,8 +1,6 @@
 module terraform-provider-metabase
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.0
 
 require (
 	github.com/bnjns/metabase-sdk-go v0.1.3
@@ -12,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 )
 
 require (
