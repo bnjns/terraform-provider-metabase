@@ -42,7 +42,7 @@ jobs:
         run: |
           go test ./... \
             -coverprofile=tests/coverage-unit.out -json | tee tests/report-unit.json
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: tests-unit
           path: tests/
@@ -85,7 +85,7 @@ jobs:
           go test -v ./... -run "^TestAcc" \
             -coverprofile=tests/coverage-acc.out -json | tee tests/report-acc.json
         timeout-minutes: 10
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: tests-acc-${{ matrix.terraform }}
           path: tests/
