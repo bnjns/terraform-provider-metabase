@@ -6,7 +6,7 @@ require (
 	github.com/bnjns/metabase-sdk-go v0.1.3
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
-	github.com/hashicorp/terraform-plugin-go v0.30.0
+	github.com/hashicorp/terraform-plugin-go v0.31.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
