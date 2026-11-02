@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.2
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 )
 
 require (
